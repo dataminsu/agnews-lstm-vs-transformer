@@ -1,0 +1,48 @@
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*.egg-info/
+.ipynb_checkpoints/
+
+# ---- Environments (regenerate via setup_env.ps1) ----
+.venv/
+venv/
+env/
+.conda/
+
+# ---- HF datasets / model cache ----
+.cache/
+.huggingface/
+
+# ---- Training artifacts (regenerate by running) ----
+outputs/
+runs/
+*.pt
+*.pth
+*.ckpt
+
+# ---- OS / editor ----
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# ---- Tool state ----
+.omc/
+.claude/
+
+# ---- Secrets ----
+.env
+.env.*
+*.pem
+*.key
+.github_token
+
+# ---- Team bundle (one-off share, not the source of truth) ----
+Caffeine.zip
+*.zip
+
+# ---- Internal docs / course handouts (kept local; not redistributed publicly) ----
+docs/
+/2026_term_project.pdf
+/assignment1_plan_*.docx
