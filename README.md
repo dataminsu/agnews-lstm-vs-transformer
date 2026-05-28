@@ -70,9 +70,20 @@ docs/
 - **LSTM**: embed 128, 2-layer unidirectional, hidden 256, last hidden-state pooling.
 - **Transformer Encoder**: embed 128 + positional encoding, 2 layers, 4 heads, FF 256, mean-pool over non-pad tokens.
 
-## Required ablation
+## Required ablation — LSTM side, embedding dimension `64 / 128 / 256`
 
-Embedding dimension sweep `64 / 128 / 256`, identical for both models. Hypothesis: representation size improves accuracy with diminishing returns.
+Hypothesis (plan §5): representation size improves accuracy with diminishing returns; the chosen config is the one at the accuracy plateau, **not the largest**. All other knobs fixed at the base config (hidden=256, 2 layers, dropout=0.3, Adam lr=1e-3, batch=64, 8 epochs, seed=42).
+
+| tag      | embed | params     | best ep | val F1 | **test acc** | **test F1** | t (s) |
+|----------|------:|-----------:|--------:|-------:|-------------:|------------:|------:|
+| embed64  |    64 |  2,137,092 |       4 | 0.9165 |   **0.9175** |  **0.9174** | 301.5 |
+| baseline |   128 |  3,482,628 |       6 | 0.9165 |       0.9172 |      0.9172 | 303.1 |
+| embed256 |   256 |  6,173,700 |       4 | 0.9204 |       0.9138 |      0.9137 | 316.3 |
+
+**Reading (LSTM only).** Test F1 is essentially flat between embed=64 (0.9174) and embed=128 (0.9172), and **drops** at embed=256 (0.9137). Validation F1 keeps rising with size (0.9165 → 0.9165 → 0.9204), so the largest model has the best *seen* checkpoint but generalizes worse — a textbook overfit signature visible only because we held the test set back. The accuracy-per-parameter optimum on the LSTM side of this sweep is **embed=64** (≈62% of the baseline's params for an indistinguishable test score). The Transformer-side sweep is owned by a teammate and may show a different plateau.
+
+Raw per-run artifacts (untracked, regenerable): `code/outputs/lstm/<tag>/{metrics.json, history.json, confusion_matrix.npy, best.pt}`.
+Reproduce: `python -u code/train_lstm.py --embed-dim 64 --tag embed64` (and 128/256). Aggregate: `python code/summarize_ablation.py --save-md code/ablation_embed_dim.md`.
 
 ## License
 
