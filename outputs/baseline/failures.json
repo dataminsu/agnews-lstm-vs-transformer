@@ -1,0 +1,262 @@
+[
+  {
+    "text": "Maddux Wins No. 302, Baker Wins No. 1,000 Greg Maddux pitched the Chicago Cubs into the lead in the NL wild-card race and gave Dusty Baker a win to remember. Maddux threw seven shutout innings for his 302nd career win, Baker got his 1,000th victory as a manager and Chicago beat the Montreal Expos 5-2 on Monday night...",
+    "true_label": "World",
+    "pred_label": "Sports",
+    "confidence": 0.9999,
+    "probs": {
+      "World": 0.0001,
+      "Sports": 0.9999,
+      "Business": 0.0,
+      "Sci/Tech": 0.0
+    },
+    "truncated": false
+  },
+  {
+    "text": "Brewers buyer expected to step out of the shadows Monday MILWAUKEE - Paul Attanasio says the story of his brother buying a baseball team is like a script straight out of Hollywood. He should know.",
+    "true_label": "Business",
+    "pred_label": "Sports",
+    "confidence": 0.9999,
+    "probs": {
+      "World": 0.0001,
+      "Sports": 0.9999,
+      "Business": 0.0,
+      "Sci/Tech": 0.0
+    },
+    "truncated": false
+  },
+  {
+    "text": "Ljubicic Downs Hanescu at Open De Moselle Top-seeded Ivan Ljubicic of Croatia beat Victor Hanescu of Romania 6-4, 6-4 Tuesday in the first round of the Open de Moselle.",
+    "true_label": "World",
+    "pred_label": "Sports",
+    "confidence": 0.9999,
+    "probs": {
+      "World": 0.0,
+      "Sports": 0.9999,
+      "Business": 0.0,
+      "Sci/Tech": 0.0
+    },
+    "truncated": false
+  },
+  {
+    "text": "Nepal blockade 'blow to tourism' Nepal tour operators say tourists cancelled millions of  dollars of bookings due to the rebel blockade of Kathmandu.",
+    "true_label": "Business",
+    "pred_label": "World",
+    "confidence": 0.9998,
+    "probs": {
+      "World": 0.9998,
+      "Sports": 0.0,
+      "Business": 0.0002,
+      "Sci/Tech": 0.0
+    },
+    "truncated": false
+  },
+  {
+    "text": "Bryant Makes First Appearance at Trial (AP) AP - NBA star Kobe Bryant arrived at his sexual assault trial Monday as attorneys in the case who spent the weekend poring over questionnaires prepared to question potential jurors individually.",
+    "true_label": "Sci/Tech",
+    "pred_label": "Sports",
+    "confidence": 0.9998,
+    "probs": {
+      "World": 0.0001,
+      "Sports": 0.9998,
+      "Business": 0.0,
+      "Sci/Tech": 0.0
+    },
+    "truncated": false
+  },
+  {
+    "text": "At Last, Success on the Road for Lions The Detroit Lions went three full seasons without winning an away game, setting an NFL record for road futility. They ended that ignominious streak Sunday in their first opportunity of the season, beating the Chicago Bears 20-16 at Soldier Field...",
+    "true_label": "World",
+    "pred_label": "Sports",
+    "confidence": 0.9998,
+    "probs": {
+      "World": 0.0001,
+      "Sports": 0.9998,
+      "Business": 0.0,
+      "Sci/Tech": 0.0
+    },
+    "truncated": false
+  },
+  {
+    "text": "Indonesian diplomats asked to help improve RI #39;s bad image JAKARTA (Antara): President Susilo Yudhoyono asked Indonesian diplomats on Monday to help the government improve Indonesia #39;s bad image.",
+    "true_label": "Business",
+    "pred_label": "World",
+    "confidence": 0.9998,
+    "probs": {
+      "World": 0.9998,
+      "Sports": 0.0,
+      "Business": 0.0001,
+      "Sci/Tech": 0.0
+    },
+    "truncated": false
+  },
+  {
+    "text": "Israel to close Erez industrial zone before March Israel would start liquidating the Erez industrial zone in the northern Gaza Strip before launching the first stage of the disengagement plan in March 2005,local newspaper Ha #39;aretz reported on Tuesday.",
+    "true_label": "Business",
+    "pred_label": "World",
+    "confidence": 0.9997,
+    "probs": {
+      "World": 0.9997,
+      "Sports": 0.0,
+      "Business": 0.0002,
+      "Sci/Tech": 0.0
+    },
+    "truncated": false
+  },
+  {
+    "text": "Fable; Nascar 2005: Chase For The Cup Fable comes with a big reputation behind it -- it was developed by Peter Molyneux, creator of such involved, engrossing games as Populous and Black and White.",
+    "true_label": "Sci/Tech",
+    "pred_label": "Sports",
+    "confidence": 0.9997,
+    "probs": {
+      "World": 0.0001,
+      "Sports": 0.9997,
+      "Business": 0.0001,
+      "Sci/Tech": 0.0001
+    },
+    "truncated": false
+  },
+  {
+    "text": "Miss Peru takes Miss World crown Twenty-year-old Miss Peru has been crowned Miss World in a southern Chinese resort town, as China looks to become the regular host of an event that would have once been deemed heretical by its Communist leaders.",
+    "true_label": "Sports",
+    "pred_label": "World",
+    "confidence": 0.9997,
+    "probs": {
+      "World": 0.9997,
+      "Sports": 0.0001,
+      "Business": 0.0001,
+      "Sci/Tech": 0.0
+    },
+    "truncated": false
+  },
+  {
+    "text": "Warne takes six but India establish handy lead (Reuters) Reuters - World test wicket record holder Shane Warne grabbed six wickets as India established a handy 141-run first innings lead in the second test on Saturday.",
+    "true_label": "World",
+    "pred_label": "Sports",
+    "confidence": 0.9996,
+    "probs": {
+      "World": 0.0004,
+      "Sports": 0.9996,
+      "Business": 0.0,
+      "Sci/Tech": 0.0
+    },
+    "truncated": false
+  },
+  {
+    "text": "Another homicide in Holland  It is a sad day.      In what seems to be another politically inspired homicide in Holland, Dutch filmmaker, and controversial columnist Theo van Gogh was brutally murdered in the streets of Amsterdam this morning.",
+    "true_label": "Sci/Tech",
+    "pred_label": "World",
+    "confidence": 0.9996,
+    "probs": {
+      "World": 0.9996,
+      "Sports": 0.0001,
+      "Business": 0.0003,
+      "Sci/Tech": 0.0001
+    },
+    "truncated": false
+  },
+  {
+    "text": "Philippines mourns dead in Russian school siege The Philippines Saturday expressed quot;deepest sympathy quot; to the families of the dead in the Russian school siege on Friday, in which 322 people were killed when Russian troops stormed ",
+    "true_label": "Sci/Tech",
+    "pred_label": "World",
+    "confidence": 0.9995,
+    "probs": {
+      "World": 0.9995,
+      "Sports": 0.0,
+      "Business": 0.0005,
+      "Sci/Tech": 0.0
+    },
+    "truncated": false
+  },
+  {
+    "text": "Toughest athlete is female and unknown You probably haven't heard about one of the toughest endurance sports around: the deca-ironman. That's 38 km swimming, immediately followed by an 1800 km bicycle ride and a 420 km run. Currently, the world record stands at about 187 hours, held by a German housewife. Nobody else has ever finished the course below 192 hours.  ",
+    "true_label": "Sci/Tech",
+    "pred_label": "Sports",
+    "confidence": 0.9995,
+    "probs": {
+      "World": 0.0001,
+      "Sports": 0.9995,
+      "Business": 0.0,
+      "Sci/Tech": 0.0003
+    },
+    "truncated": false
+  },
+  {
+    "text": "Greenspan: Debt, home prices not dangerous The record level of debt carried by American households and soaring home prices do not appear to represent serious threats to the US economy, Federal Reserve Chairman Alan Greenspan said Tuesday.",
+    "true_label": "Sci/Tech",
+    "pred_label": "Business",
+    "confidence": 0.9993,
+    "probs": {
+      "World": 0.0004,
+      "Sports": 0.0,
+      "Business": 0.9993,
+      "Sci/Tech": 0.0003
+    },
+    "truncated": false
+  },
+  {
+    "text": "Ex-Bush Official on Cybersecurity Returns (AP) AP - Howard Schmidt, a highly regarded technology executive who was former special adviser to President Bush for cybersecurity, is returning to work with the Homeland Security Department on efforts to protect the nation's computer networks.",
+    "true_label": "World",
+    "pred_label": "Sci/Tech",
+    "confidence": 0.9992,
+    "probs": {
+      "World": 0.0007,
+      "Sports": 0.0,
+      "Business": 0.0001,
+      "Sci/Tech": 0.9992
+    },
+    "truncated": false
+  },
+  {
+    "text": "Glazer stake in Man Utd nears 30 US tycoon Malcolm Glazer lifts his stake in Manchester Utd to 28.11, one day after spending 17m on  further share buys.",
+    "true_label": "World",
+    "pred_label": "Sports",
+    "confidence": 0.9992,
+    "probs": {
+      "World": 0.0006,
+      "Sports": 0.9992,
+      "Business": 0.0003,
+      "Sci/Tech": 0.0
+    },
+    "truncated": false
+  },
+  {
+    "text": "Meditation Practice Helping Arthritis Patients By ALEX DOMINGUEZ    BALTIMORE (AP) -- Dalia Isicoff knows pain. A lifelong sufferer of rheumatoid arthritis, she has had seven hip replacement surgeries...",
+    "true_label": "Sci/Tech",
+    "pred_label": "Sports",
+    "confidence": 0.9987,
+    "probs": {
+      "World": 0.0009,
+      "Sports": 0.9987,
+      "Business": 0.0001,
+      "Sci/Tech": 0.0003
+    },
+    "truncated": false
+  },
+  {
+    "text": "Virgin Starts (70) Mile-High Club With the misery that has plagued the airline industry recently, the last place you #39;d expect to see some inspiring -- heck, potentially rule-breaking -- thinking would be from an airline entrepreneur.",
+    "true_label": "Sci/Tech",
+    "pred_label": "Business",
+    "confidence": 0.9987,
+    "probs": {
+      "World": 0.0002,
+      "Sports": 0.0002,
+      "Business": 0.9987,
+      "Sci/Tech": 0.0009
+    },
+    "truncated": false
+  },
+  {
+    "text": "Greek weightlifter awaits verdict Greek weightlifter Leonidas Sampanis will find out on Sunday if he is to be stripped of his medal.",
+    "true_label": "World",
+    "pred_label": "Sports",
+    "confidence": 0.9986,
+    "probs": {
+      "World": 0.0014,
+      "Sports": 0.9986,
+      "Business": 0.0,
+      "Sci/Tech": 0.0
+    },
+    "truncated": false
+  }
+]

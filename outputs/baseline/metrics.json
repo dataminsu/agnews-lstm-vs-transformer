@@ -1,0 +1,42 @@
+{
+  "config": {
+    "embed_dim": 128,
+    "nhead": 4,
+    "num_layers": 2,
+    "dim_feedforward": 256,
+    "dropout": 0.3,
+    "pooling": "mean",
+    "lr": 0.001,
+    "epochs": 8,
+    "max_len": 128,
+    "train_fraction": 1.0,
+    "batch_size": 64,
+    "tag": "baseline",
+    "grad_clip": 1.0
+  },
+  "data": {
+    "vocab_size": 20000,
+    "pad_idx": 0,
+    "num_classes": 4,
+    "class_names": [
+      "World",
+      "Sports",
+      "Business",
+      "Sci/Tech"
+    ],
+    "train_size": 108000,
+    "val_size": 12000,
+    "test_size": 7600
+  },
+  "model": {
+    "trainable_params": 2825476,
+    "best_epoch": 8,
+    "best_val_f1": 0.9213862446971735
+  },
+  "test": {
+    "loss": 0.2766595303855444,
+    "accuracy": 0.9207894736842105,
+    "macro_f1": 0.9207336219789217
+  },
+  "train_time_sec": 257.1255114078522
+}
