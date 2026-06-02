@@ -1,13 +1,13 @@
 """Aggregate metrics.json files across Transformer runs into one ablation table.
 
-Reads outputs/<tag>/metrics.json next to this script and prints (and optionally
-saves) a table sorted by the swept variable. Default sweep variable is `embed_dim`.
+Reads outputs/transformer/<tag>/metrics.json for each subfolder and prints/saves a
+table sorted by the swept variable. Default sweep variable is `embed_dim`.
 
-Usage (run from inside code/transformer/):
-    python summarize_ablation_transformer.py                          # embed_dim sweep
-    python summarize_ablation_transformer.py --sweep num_layers       # layer-depth sweep
-    python summarize_ablation_transformer.py --sweep train_fraction   # learning-curve sweep
-    python summarize_ablation_transformer.py --save-md ablation_embed_dim_transformer.md
+Usage:
+    python summarize_ablation.py                          # embed_dim sweep
+    python summarize_ablation.py --sweep num_layers       # layer-depth sweep
+    python summarize_ablation.py --sweep train_fraction   # learning-curve sweep
+    python summarize_ablation.py --save-md ablation_embed_dim.md
 """
 from __future__ import annotations
 
@@ -17,9 +17,10 @@ from pathlib import Path
 
 
 PRESET_TAGS = {
-    "embed_dim":      {"embed64", "baseline", "embed256"},
-    "num_layers":     {"layers1", "baseline", "layers3"},
-    "train_fraction": {"lc25", "lc50", "baseline"},
+    "embed_dim":      {"embed32", "embed64", "baseline", "embed256"},
+    "dropout":        {"dropout01", "embed64", "dropout05", "dropout08"},
+    "num_layers":     {"layers1", "embed64", "layers3", "layers4", "layers5"},
+    "train_fraction": {"lc25", "lc50", "embed64"},
 }
 
 
@@ -37,7 +38,7 @@ def load_runs(out_root: Path, wanted: set | None = None):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--out-root", type=Path,
-                    default=Path(__file__).parent / "outputs")
+                    default=Path(__file__).parent / "outputs" / "transformer")
     ap.add_argument("--sweep", type=str, default="embed_dim")
     ap.add_argument("--save-md", type=Path, default=None)
     args = ap.parse_args()
@@ -122,3 +123,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
