@@ -41,19 +41,26 @@ code/
   data_pipeline.py       # AG News loader, vocab, DataLoaders (shared by both models)
   models.py              # AverageEmbeddingClassifier (smoke test) + LSTMClassifier + TransformerEncoderClassifier
   train_lstm.py          # LSTM baseline + ablation runner
-  train_transformer.py   # Transformer baseline + ablation runner
-  summarize_ablation.py  # Collects outputs/<model>/<tag>/metrics.json into one table
+  summarize_ablation.py  # Collects outputs/<model>/<tag>/metrics.json into one table (works for both models)
   ablation_embed_dim.md  # Generated LSTM embedding-dim ablation table
   train_eval.ipynb       # Final submission notebook
   model_guide.md         # Pipeline interface, batch contract, hyperparameters (Korean, for teammates)
-  transformer_guide.md   # Step-by-step guide for extending the Transformer (Korean, for Hyeju)
   environment.yml        # conda env spec (Python 3.11)
   requirements.txt       # pinned pip deps (torch 2.3.0, torchtext 0.18.0, datasets, sklearn)
   setup_env.ps1          # Windows setup helper (conda)
+  transformer/                          # Everything specific to the Transformer side
+    train_transformer.py                # Transformer baseline + ablation runner
+    summarize_ablation_transformer.py   # Collects this folder's outputs into one table
+    ablation_embed_dim_transformer.md   # Generated Transformer embedding-dim ablation table
+    transformer_guide.md                # Step-by-step guide for extending the Transformer (Korean, for Hyeju)
 docs/                    # Course handouts, kept local (git-ignored, not redistributed)
   2026_term_project.pdf
   assignment1_plan.docx
 ```
+
+`data_pipeline.py` and `models.py` are shared and stay in `code/`. The Transformer
+scripts live in `code/transformer/` and add `code/` to the import path automatically,
+so run them from inside `code/transformer/`.
 
 ## Fixed experimental conditions
 
@@ -129,9 +136,10 @@ accuracy-per-parameter point is again embed 64, which reaches the top test F1 wi
 about 49% of the baseline's parameters. So for this setup a bigger representation did
 not help: the smallest embedding was both the most accurate and the most efficient.
 
-Per-run artifacts: `code/outputs/transformer/<tag>/` with `metrics.json`,
+Per-run artifacts: `code/transformer/outputs/<tag>/` with `metrics.json`,
 `history.json`, `confusion_matrix.npy`, `best.pt`.
-Reproduce: `python -u train_transformer.py --embed-dim 64 --tag embed64` (then 128 and 256).
+Reproduce (from `code/transformer/`): `python -u train_transformer.py --embed-dim 64 --tag embed64` (then 128 and 256).
+Aggregate: `python summarize_ablation_transformer.py --save-md ablation_embed_dim_transformer.md`.
 
 ## License
 

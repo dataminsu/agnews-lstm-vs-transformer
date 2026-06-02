@@ -6,9 +6,13 @@ Adam lr=1e-3, batch=64, 8 epochs, seed=42.
 
 Selects the best epoch by validation macro-F1, then evaluates ONCE on the
 official test set. Writes history, metrics, and the confusion matrix to
-outputs/transformer/<tag>/ (defaults to outputs/transformer/baseline/).
+outputs/<tag>/ next to this script (defaults to outputs/baseline/).
 
-Usage:
+This script lives in code/transformer/. The shared data_pipeline.py and
+models.py stay one level up in code/, so we add that folder to the import path
+below.
+
+Usage (run from inside code/transformer/):
     conda activate agnews-dl
     python -u train_transformer.py
     # Ablation examples:
@@ -22,6 +26,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import sys
 import time
 from pathlib import Path
 
@@ -33,6 +38,9 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from sklearn.metrics import accuracy_score, confusion_matrix, f1_score
+
+# data_pipeline.py and models.py are shared and live in the parent code/ folder.
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from data_pipeline import DataConfig, build_pipeline, set_seed, to_device
 from models import TransformerEncoderClassifier, count_parameters
@@ -95,12 +103,12 @@ def main():
     ap.add_argument("--train-fraction",  type=float, default=1.0)
     ap.add_argument("--batch-size",      type=int,   default=64)
     ap.add_argument("--tag",             type=str,   default="baseline",
-                    help="Output subfolder name under outputs/transformer/")
+                    help="Output subfolder name under code/transformer/outputs/")
     ap.add_argument("--grad-clip",       type=float, default=1.0,
                     help="Max grad norm for clip_grad_norm_; 0 disables")
     args = ap.parse_args()
 
-    out_dir = Path(__file__).parent / "outputs" / "transformer" / args.tag
+    out_dir = Path(__file__).parent / "outputs" / args.tag
     out_dir.mkdir(parents=True, exist_ok=True)
 
     set_seed(42)

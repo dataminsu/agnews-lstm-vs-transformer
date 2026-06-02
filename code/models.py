@@ -135,8 +135,8 @@ class TransformerEncoderClassifier(nn.Module):
       - Dropout -> Linear produces the logits (B, num_classes); no softmax,
         because CrossEntropyLoss expects raw logits.
 
-    This is the model Hyeju extends. See code/transformer_guide.md for a
-    step-by-step guide on what to change and where.
+    This is the model Hyeju extends. See code/transformer/transformer_guide.md
+    for a step-by-step guide on what to change and where.
     """
 
     def __init__(self, vocab_size, num_classes, pad_idx, embed_dim=128, nhead=4,

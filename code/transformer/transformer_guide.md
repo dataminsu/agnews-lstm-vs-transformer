@@ -21,13 +21,17 @@
 
 ## 1. 어떤 파일을 보면 되나요
 
-| 파일 | 무슨 일을 하나 | 혜주님이 건드릴 일 |
-|------|----------------|--------------------|
-| `models.py` | 모델 구조 정의. 그중 `TransformerEncoderClassifier`가 우리 Transformer | 구조 자체를 바꿀 때만 (5번) |
-| `train_transformer.py` | Transformer를 학습하고, 평가하고, 결과를 저장 | 새 옵션을 추가할 때 (5-C) |
-| `data_pipeline.py` | 데이터 로딩, 토큰화, 배치 만들기 | 거의 안 건드림. `max_len`만 예외 |
+Transformer 관련 파일은 이 폴더(`code/transformer/`)에 모여 있습니다. 단,
+모델 구조와 데이터 처리는 LSTM과 함께 쓰는 공유 파일이라 상위 폴더 `code/`에 있습니다.
 
-`models.py` 안에서 Transformer와 관련된 부분은 두 클래스입니다.
+| 파일 | 위치 | 무슨 일을 하나 | 혜주님이 건드릴 일 |
+|------|------|----------------|--------------------|
+| `train_transformer.py` | `code/transformer/` (여기) | Transformer를 학습하고, 평가하고, 결과를 저장 | 새 옵션을 추가할 때 (5-C) |
+| `summarize_ablation_transformer.py` | `code/transformer/` (여기) | 여러 실험 결과를 표 하나로 묶기 | 거의 안 건드림 |
+| `models.py` | `code/` (상위 폴더) | 모델 구조 정의. 그중 `TransformerEncoderClassifier`가 우리 Transformer | 구조 자체를 바꿀 때만 (5번) |
+| `data_pipeline.py` | `code/` (상위 폴더) | 데이터 로딩, 토큰화, 배치 만들기 | 거의 안 건드림. `max_len`만 예외 |
+
+상위 폴더 `code/models.py` 안에서 Transformer와 관련된 부분은 두 클래스입니다.
 
 - `SinusoidalPositionalEncoding` (대략 92번째 줄부터): 위치 정보를 더해 주는 부분.
 - `TransformerEncoderClassifier` (대략 120번째 줄부터): 우리 Transformer 본체.
@@ -75,7 +79,7 @@ def __init__(self, vocab_size, num_classes, pad_idx, embed_dim=128, nhead=4,
 ## 3. 코드 수정 없이 옵션만 바꾸기 (제일 많이 쓰는 방법)
 
 `train_transformer.py`는 위 인자들을 전부 명령줄 옵션으로 받습니다. 즉 터미널에서
-숫자만 바꿔 주면 됩니다. 실행 위치는 항상 `code` 폴더 안입니다(`cd code`).
+숫자만 바꿔 주면 됩니다. 실행 위치는 이 폴더입니다(`cd code/transformer`).
 
 | 옵션 | 바꾸는 것 | 기본값 | 주의 |
 |------|-----------|--------|------|
@@ -91,7 +95,7 @@ def __init__(self, vocab_size, num_classes, pad_idx, embed_dim=128, nhead=4,
 | `--max-len` | 최대 문장 길이 | 128 | 데이터 쪽도 같이 바뀜 |
 | `--tag` | 결과 저장 폴더 이름 | baseline | 실험마다 다르게 주기 |
 
-`--tag`가 중요합니다. 결과가 `outputs/transformer/<tag>/`에 저장되는데, tag를 안 바꾸면
+`--tag`가 중요합니다. 결과가 이 폴더 안 `outputs/<tag>/`에 저장되는데, tag를 안 바꾸면
 이전 결과를 덮어씁니다. 실험마다 알아보기 쉬운 이름을 주세요.
 
 ### 필수 ablation: embedding dim 64 / 128 / 256
@@ -118,7 +122,7 @@ python -u train_transformer.py --num-layers 3 --tag layers3
 
 ## 4. 결과 확인하기
 
-한 번 학습이 끝나면 `outputs/transformer/<tag>/`에 아래가 저장됩니다.
+한 번 학습이 끝나면 이 폴더 안 `outputs/<tag>/`에 아래가 저장됩니다.
 
 | 파일 | 내용 |
 |------|------|
@@ -129,19 +133,19 @@ python -u train_transformer.py --num-layers 3 --tag layers3
 | `failures.json` | 가장 자신 있게 틀린 오분류 예시 상위 20개 |
 | `best.pt` | 검증 점수가 가장 좋았던 시점의 모델 가중치 |
 
-여러 실험을 표 하나로 묶고 싶으면 `summarize_ablation.py`에 Transformer 폴더를
-가리켜 줍니다.
+여러 실험을 표 하나로 묶고 싶으면 같은 폴더의 `summarize_ablation_transformer.py`를
+실행합니다. 기본값으로 이 폴더의 `outputs/`를 읽으니 옵션 없이도 됩니다.
 
 ```powershell
-python summarize_ablation.py --out-root outputs/transformer --save-md ablation_transformer.md
+python summarize_ablation_transformer.py --save-md ablation_embed_dim_transformer.md
 ```
 
 ---
 
 ## 5. 코드를 직접 고쳐야 하는 경우
 
-옵션으로 안 되는 변경은 `models.py`를 손봐야 합니다. 아래 세 가지가 대표적입니다.
-고치기 전에 원본을 복사해 두거나 git으로 현재 상태를 커밋해 두면 안전합니다.
+옵션으로 안 되는 변경은 상위 폴더의 `code/models.py`를 손봐야 합니다. 아래 세 가지가
+대표적입니다. 고치기 전에 원본을 복사해 두거나 git으로 현재 상태를 커밋해 두면 안전합니다.
 
 ### (A) pooling 방식을 새로 추가하기
 
@@ -276,7 +280,7 @@ self.pos_encoding = LearnedPositionalEncoding(
 - [ ] `--tag`를 안 바꿔서 이전 결과를 덮어쓰지 않았나요?
 - [ ] `embed_dim`이 `nhead`로 나누어떨어지나요?
 - [ ] 한 번에 옵션을 하나만 바꿨나요? (여러 개 바꾸면 원인 파악이 어려움)
-- [ ] 코드를 고친 뒤 `python -c "import models"`로 import 에러가 없는지 봤나요?
+- [ ] 코드를 고친 뒤 `python -u train_transformer.py`가 에러 없이 시작하는지 봤나요? (import 오류가 있으면 바로 멈춥니다)
 - [ ] 같은 비교를 할 때 seed를 그대로 42로 뒀나요? (스크립트가 기본으로 고정)
 - [ ] CPU에서는 한 번 학습에 몇 분 걸립니다. GPU가 있으면 자동으로 GPU를 씁니다.
 
@@ -289,21 +293,21 @@ PowerShell에서 아래를 그대로 붙여 넣으면 embedding dim 세 개를 �
 
 ```powershell
 conda activate agnews-dl
-cd code
+cd code/transformer
 python -u train_transformer.py --embed-dim 64  --tag embed64
 python -u train_transformer.py --embed-dim 128 --tag baseline
 python -u train_transformer.py --embed-dim 256 --tag embed256
-python summarize_ablation.py --out-root outputs/transformer --save-md ablation_transformer.md
+python summarize_ablation_transformer.py --save-md ablation_embed_dim_transformer.md
 ```
 
-다 돌고 나면 `ablation_transformer.md`에 세 실험이 한 표로 정리됩니다. 이 표를
+다 돌고 나면 `ablation_embed_dim_transformer.md`에 세 실험이 한 표로 정리됩니다. 이 표를
 보고서의 Transformer ablation 절에 그대로 넣으면 됩니다.
 
 ---
 
 ## 9. 막히면
 
-- 모델 인터페이스(배치가 어떻게 생겼는지, 어떤 규칙을 지켜야 하는지)는 `model_guide.md`에 있습니다.
+- 모델 인터페이스(배치가 어떻게 생겼는지, 어떤 규칙을 지켜야 하는지)는 상위 폴더의 `code/model_guide.md`에 있습니다.
 - 전체 실험 흐름과 결과는 저장소 루트의 `README.md`에 정리돼 있습니다.
 - 에러 메시지를 그대로 읽어 보세요. `embed_dim must be divisible by nhead`처럼
   뭐가 문제인지 알려 주는 경우가 많습니다.

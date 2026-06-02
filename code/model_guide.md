@@ -5,7 +5,7 @@
 `models.py`의 `LSTMClassifier`와 `TransformerEncoderClassifier`는 이미 구현이
 끝나 있습니다. 파이프라인 인터페이스는 고정돼 있으니, 아래 규칙만 지키면 두 모델을
 그대로 학습 루프에 붙일 수 있습니다. 모델을 더 손보고 싶다면(특히 Transformer)
-`transformer_guide.md`를 보세요.
+`transformer/transformer_guide.md`를 보세요.
 
 ---
 
@@ -156,7 +156,7 @@ metric, training budget입니다.
 | 데이터 크기 (25/50/100%), 학습 곡선 | `DataConfig(train_fraction=...)` | 데이터 파이프라인 |
 | Transformer depth(1 vs 3), LSTM hidden(128/256/512), 선택 확장 | 모델 인자 | 모델 담당 |
 
-Transformer 쪽을 바꾸는 구체적인 방법은 `transformer_guide.md`에 단계별로 적어 뒀습니다.
+Transformer 쪽을 바꾸는 구체적인 방법은 `transformer/transformer_guide.md`에 단계별로 적어 뒀습니다.
 
 ---
 
@@ -188,7 +188,7 @@ device 헬퍼, test 분리)은 파이프라인에서 이미 처리했습니다. 
 6. 실패 분석: 배치의 `texts`, `indices`, `truncated`로 오분류 예시를 뽑습니다(공유, LSTM만, Transformer만 각각 5건 이상).
 7. 최종 제출은 `train_eval.ipynb` 중심으로 정리합니다.
 
-`train_lstm.py`와 `train_transformer.py`에 위 1~4번을 그대로 돌리는 스크립트가 이미
+`train_lstm.py`와 `transformer/train_transformer.py`에 위 1~4번을 그대로 돌리는 스크립트가 이미
 들어 있으니, 따라 쓰거나 참고하면 됩니다.
 
 ---

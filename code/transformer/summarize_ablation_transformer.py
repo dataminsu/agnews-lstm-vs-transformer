@@ -1,13 +1,13 @@
 """Aggregate metrics.json files across Transformer runs into one ablation table.
 
-Reads outputs/transformer/<tag>/metrics.json for each subfolder and prints/saves a
-table sorted by the swept variable. Default sweep variable is `embed_dim`.
+Reads outputs/<tag>/metrics.json next to this script and prints (and optionally
+saves) a table sorted by the swept variable. Default sweep variable is `embed_dim`.
 
-Usage:
-    python summarize_ablation.py                          # embed_dim sweep
-    python summarize_ablation.py --sweep num_layers       # layer-depth sweep
-    python summarize_ablation.py --sweep train_fraction   # learning-curve sweep
-    python summarize_ablation.py --save-md ablation_embed_dim.md
+Usage (run from inside code/transformer/):
+    python summarize_ablation_transformer.py                          # embed_dim sweep
+    python summarize_ablation_transformer.py --sweep num_layers       # layer-depth sweep
+    python summarize_ablation_transformer.py --sweep train_fraction   # learning-curve sweep
+    python summarize_ablation_transformer.py --save-md ablation_embed_dim_transformer.md
 """
 from __future__ import annotations
 
@@ -37,7 +37,7 @@ def load_runs(out_root: Path, wanted: set | None = None):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--out-root", type=Path,
-                    default=Path(__file__).parent / "outputs" / "transformer")
+                    default=Path(__file__).parent / "outputs")
     ap.add_argument("--sweep", type=str, default="embed_dim")
     ap.add_argument("--save-md", type=Path, default=None)
     args = ap.parse_args()
