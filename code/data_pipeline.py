@@ -7,8 +7,8 @@ length, and processed inputs for both models.
 
 Dataset source rule (instructor brief 3.2):
     The dataset is HuggingFace `ag_news` ONLY. TorchText is used *only* for its
-    `basic_english` tokenizer and its vocabulary utility -- NOT as a dataset
-    loader. We never mix HuggingFace / TorchText / raw-CSV access routes.
+    `basic_english` tokenizer and its vocabulary utility, not as a dataset
+    loader. We never mix the HuggingFace, TorchText, and raw-CSV access routes.
 
 Honors the team plan (assignment1_plan.docx) and the brief (2026_term_project.pdf):
   - seed=42, 90/10 train/val split from the official train set;
@@ -21,7 +21,7 @@ Truncation strategy:
     dropping trailing tokens. So the maximum sequence length is always controlled.
 
 Padding strategy:
-    Default is batch-wise dynamic padding -- each batch is padded to its own
+    Default is batch-wise dynamic padding, so each batch is padded to its own
     longest sequence, never beyond `max_len`. Set DataConfig.pad_to_max_len=True
     to instead pad every batch to a fixed length of `max_len`. Dynamic padding is
     the default to save compute. Both models consume the SAME processed inputs.
@@ -30,7 +30,7 @@ Ablation knobs that touch DATA live here (the model teammate does NOT change the
   - DataConfig.max_len        -> sequence-length sweep (128 vs 256)
   - DataConfig.train_fraction -> learning-curve data sizes (0.25 / 0.5 / 1.0), stratified
 
-Batch contract (what every DataLoader yields) -- see model_guide.md:
+Batch contract (what every DataLoader yields), see model_guide.md:
     {
       "input_ids":    LongTensor (batch, seq_len),   # padded with pad_idx
       "lengths":      LongTensor (batch,),            # true token count per row (>0, <= max_len)
@@ -75,7 +75,7 @@ class DataConfig:
     batch_size: int = 64
     num_workers: int = 0            # keep 0 on Windows for reproducible, hassle-free runs
 
-    #ablation task 용 파라미터
+    # Ablation knobs that change the DATA (owned by the pipeline, not the model):
     max_len: int = 128              # truncation length (ablation: 128 vs 256)
     train_fraction: float = 1.0     # learning-curve data size (stratified subset)
 
@@ -144,14 +144,13 @@ def build_vocab(train_texts, tokenizer, cfg: DataConfig):
 def encode(text, tokenizer, vocab, max_len: int, unk_idx: int):
     """Encode one raw string. Returns (ids, orig_len, truncated).
 
-    orig_len is the token count BEFORE truncation; truncated says whether the
-    sequence exceeded max_len. A non-empty sequence is guaranteed (empty input
-    becomes [unk_idx]) so pack_padded_sequence never sees a length-0 row.
-    
-    ids        # 모델에 들어갈 숫자 token list
-    orig_len   # 자르기 전 원래 token 개수
-    truncated  # max_len 때문에 잘렸는지 여부
-    
+    Returned values:
+      ids        list of integer token ids fed to the model
+      orig_len   token count BEFORE truncation
+      truncated  True if the sequence was cut because it exceeded max_len
+
+    A non-empty sequence is guaranteed (empty input becomes [unk_idx]) so
+    pack_padded_sequence never sees a length-0 row.
     """
     tokens = tokenizer(text)
     orig_len = len(tokens)

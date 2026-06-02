@@ -47,7 +47,7 @@ def train_one_epoch(model, loader, optimizer, criterion, device, grad_clip=1.0):
         logits = model(batch["input_ids"], batch["lengths"])
         loss = criterion(logits, batch["labels"])
         if not math.isfinite(loss.item()):
-            raise RuntimeError(f"non-finite loss ({loss.item()}) — aborting")
+            raise RuntimeError(f"non-finite loss ({loss.item()}); aborting before it corrupts the run")
         loss.backward()
         if grad_clip and grad_clip > 0:
             torch.nn.utils.clip_grad_norm_(model.parameters(), grad_clip)
@@ -180,7 +180,7 @@ def main():
     ax.plot(epochs, history["train_loss"], marker="o", label="train loss")
     ax.plot(epochs, history["val_loss"],   marker="s", label="val loss")
     ax.set_xlabel("Epoch"); ax.set_ylabel("Loss")
-    ax.set_title(f"Transformer Encoder — Loss Curves ({args.tag})")
+    ax.set_title(f"Transformer Encoder: Loss Curves ({args.tag})")
     ax.legend(); ax.grid(True, alpha=0.3)
     fig.tight_layout()
     fig.savefig(out_dir / "loss_curves.png", dpi=150)
@@ -194,7 +194,7 @@ def main():
     ax.set_xticklabels(bundle.class_names, rotation=30, ha="right")
     ax.set_yticklabels(bundle.class_names)
     ax.set_xlabel("Predicted"); ax.set_ylabel("True")
-    ax.set_title(f"Transformer Encoder — Confusion Matrix ({args.tag})")
+    ax.set_title(f"Transformer Encoder: Confusion Matrix ({args.tag})")
     thresh = cm.max() / 2
     for i in range(cm.shape[0]):
         for j in range(cm.shape[1]):

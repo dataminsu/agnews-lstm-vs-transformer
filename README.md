@@ -1,26 +1,26 @@
-# AG News — LSTM vs Transformer Encoder
+# AG News: LSTM vs Transformer Encoder
 
-Term project for *Deep Learning (2026)*: a controlled comparison of an LSTM
-classifier and a Transformer Encoder classifier on the AG News 4-class news
-classification task. Both models trained **from scratch** — no pretrained LMs.
+Term project for *Deep Learning (2026)*. We compare an LSTM classifier against a
+Transformer Encoder classifier on AG News, a 4-class news topic task. Both models
+are trained from scratch, with no pretrained language models.
 
 > Team: Minsu Kang (lead), Minjeong Song, Hyeju Lee.
-> Plan due **2026-05-31**, final report **2026-06-21**, presentation **2026-06-23**.
+> Plan due 2026-05-31, final report 2026-06-21, presentation 2026-06-23.
 
 ## Quick start
 
-Python 3.11 (torchtext 0.18 has no 3.13 wheel). Miniconda required.
+You need Python 3.11 (torchtext 0.18 has no wheel for 3.13) and Miniconda.
 
 ```powershell
-# 1. Build the conda env (one-time)
+# 1. Build the conda env (only once)
 powershell -ExecutionPolicy Bypass -File code\setup_env.ps1
 # or: conda env create -f code\environment.yml
 
 # 2. Activate it
 conda activate agnews-dl
 
-# 3. Verify the pipeline (prints split sizes, class distribution, batch shape,
-#    runs AverageEmbeddingClassifier smoke test).
+# 3. Check the pipeline. This prints the split sizes, class distribution, and one
+#    batch shape, then runs an AverageEmbeddingClassifier smoke test.
 cd code
 python data_pipeline.py
 
@@ -28,52 +28,63 @@ python data_pipeline.py
 python -u train_lstm.py
 ```
 
-Outputs land in `code/outputs/lstm/<tag>/` (`metrics.json`, `history.json`,
-`confusion_matrix.npy`, `best.pt`). Final submission notebook is
-`code/train_eval.ipynb`.
+Every command below assumes you are inside the `code/` directory.
+
+Each run writes its results to `code/outputs/<model>/<tag>/`, namely `metrics.json`,
+`history.json`, `confusion_matrix.npy`, and `best.pt`. The final submission lives in
+`train_eval.ipynb`.
 
 ## Layout
 
 ```
 code/
-  data_pipeline.py     # AG News loader, vocab, DataLoaders (shared by both models)
-  models.py            # AverageEmbeddingClassifier (smoke test), LSTMClassifier, TransformerEncoderClassifier
-  train_lstm.py        # LSTM baseline + ablation runner
-  train_eval.ipynb     # Final submission notebook
-  model_guide.md       # Interface / batch contract / hyperparameters for the model teammate
-  environment.yml      # conda env spec (Python 3.11)
-  requirements.txt     # pinned pip deps (torch 2.3.0 + torchtext 0.18.0 + datasets + sklearn)
-  setup_env.ps1        # Windows setup helper (conda)
-  train_transformer.py # Transformer baseline + ablation runner
-docs/
+  data_pipeline.py       # AG News loader, vocab, DataLoaders (shared by both models)
+  models.py              # AverageEmbeddingClassifier (smoke test) + LSTMClassifier + TransformerEncoderClassifier
+  train_lstm.py          # LSTM baseline + ablation runner
+  train_transformer.py   # Transformer baseline + ablation runner
+  summarize_ablation.py  # Collects outputs/<model>/<tag>/metrics.json into one table
+  ablation_embed_dim.md  # Generated LSTM embedding-dim ablation table
+  train_eval.ipynb       # Final submission notebook
+  model_guide.md         # Pipeline interface, batch contract, hyperparameters (Korean, for teammates)
+  transformer_guide.md   # Step-by-step guide for extending the Transformer (Korean, for Hyeju)
+  environment.yml        # conda env spec (Python 3.11)
+  requirements.txt       # pinned pip deps (torch 2.3.0, torchtext 0.18.0, datasets, sklearn)
+  setup_env.ps1          # Windows setup helper (conda)
+docs/                    # Course handouts, kept local (git-ignored, not redistributed)
   2026_term_project.pdf
   assignment1_plan.docx
 ```
 
 ## Fixed experimental conditions
 
+We keep everything below identical for both models so the comparison is fair.
+
 | | Value |
 |---|---|
-| Dataset source | HuggingFace `ag_news` (single source — no mixing with TorchText/CSV) |
-| Split | 90/10 train/val from official train (seed 42) + official test set held out |
+| Dataset source | HuggingFace `ag_news` (one source only, no mixing with TorchText or CSV) |
+| Split | 90/10 train/val from the official train set (seed 42), official test set held out |
 | Tokenizer | `torchtext` basic_english |
-| Vocab | Built from train only, capped at 20,000, `<pad>=0` / `<unk>=1` |
+| Vocab | Built from train only, capped at 20,000, `<pad>=0` and `<unk>=1` |
 | Max length | 128 (dynamic batch padding, capped at 128) |
 | Optimizer | Adam, lr 1e-3 |
 | Batch size | 64 |
 | Epochs | 8 |
 | Dropout | 0.3 |
 | Loss | CrossEntropyLoss on logits |
-| Model selection | Best validation macro-F1 (test set held until final eval) |
+| Model selection | Best validation macro-F1 (test set is touched only at the very end) |
 
 ### Base architectures
 
-- **LSTM**: embed 128, 2-layer unidirectional, hidden 256, last hidden-state pooling.
-- **Transformer Encoder**: embed 128 + positional encoding, 2 layers, 4 heads, FF 256, mean-pool over non-pad tokens.
+- LSTM: embedding 128, 2-layer unidirectional, hidden 256, last hidden state pooling.
+- Transformer Encoder: embedding 128 plus positional encoding, 2 layers, 4 heads,
+  feedforward 256, mean pooling over non-pad tokens.
 
-## Required ablation — LSTM side, embedding dimension `64 / 128 / 256`
+## Required ablation: LSTM side, embedding dimension 64 / 128 / 256
 
-Hypothesis (plan §5): representation size improves accuracy with diminishing returns; the chosen config is the one at the accuracy plateau, **not the largest**. All other knobs fixed at the base config (hidden=256, 2 layers, dropout=0.3, Adam lr=1e-3, batch=64, 8 epochs, seed=42).
+The plan (section 5) expected accuracy to rise with representation size but with
+diminishing returns, so the config we pick should sit at the plateau rather than
+being the largest one. Everything else stays at the base config (hidden 256, 2
+layers, dropout 0.3, Adam lr 1e-3, batch 64, 8 epochs, seed 42).
 
 | tag      | embed | params     | best ep | val F1 | **test acc** | **test F1** | t (s) |
 |----------|------:|-----------:|--------:|-------:|-------------:|------------:|------:|
@@ -81,15 +92,27 @@ Hypothesis (plan §5): representation size improves accuracy with diminishing re
 | baseline |   128 |  3,482,628 |       6 | 0.9165 |       0.9172 |      0.9172 | 303.1 |
 | embed256 |   256 |  6,173,700 |       4 | 0.9204 |       0.9138 |      0.9137 | 316.3 |
 
-**Reading (LSTM only).** Test F1 is essentially flat between embed=64 (0.9174) and embed=128 (0.9172), and **drops** at embed=256 (0.9137). Validation F1 keeps rising with size (0.9165 → 0.9165 → 0.9204), so the largest model has the best *seen* checkpoint but generalizes worse — a textbook overfit signature visible only because we held the test set back. The accuracy-per-parameter optimum on the LSTM side of this sweep is **embed=64** (≈62% of the baseline's params for an indistinguishable test score). The Transformer-side sweep is owned by a teammate and may show a different plateau.
+What the LSTM numbers say. Test F1 barely moves between embed 64 (0.9174) and embed
+128 (0.9172), and it actually drops at embed 256 (0.9137). Validation F1 keeps
+climbing with size (0.9165, 0.9165, 0.9204), so the biggest model has the best
+validation checkpoint but generalizes worse. That gap is the usual sign of
+overfitting, and we only caught it because the test set was kept aside. On the LSTM
+side the best accuracy-per-parameter point is embed 64: it uses about 62% of the
+baseline's parameters for a test score we can't tell apart. The Transformer sweep is
+owned by a teammate and may land on a different plateau.
 
-Raw per-run artifacts (untracked, regenerable): `code/outputs/lstm/<tag>/{metrics.json, history.json, confusion_matrix.npy, best.pt}`.
-Reproduce: `python -u code/train_lstm.py --embed-dim 64 --tag embed64` (and 128/256). Aggregate: `python code/summarize_ablation.py --save-md code/ablation_embed_dim.md`.
+Per-run artifacts (untracked, regenerable): `code/outputs/lstm/<tag>/` with
+`metrics.json`, `history.json`, `confusion_matrix.npy`, `best.pt`.
+Reproduce: `python -u train_lstm.py --embed-dim 64 --tag embed64` (then 128 and 256).
+Aggregate: `python summarize_ablation.py --save-md ablation_embed_dim.md`.
 
+## Required ablation: Transformer side, embedding dimension 64 / 128 / 256
 
-## Required ablation — Transformer side, embedding dimension `64 / 128 / 256`
-
-Hypothesis (plan §5): representation size improves accuracy with diminishing returns; the chosen config is the one at the accuracy plateau, **not the largest**. All other knobs fixed at the base config (2 Transformer encoder layers, 4 attention heads, feedforward dimension 256, dropout=0.3, Adam lr=1e-3, batch=64, 8 epochs, seed=42, mean pooling).
+Same hypothesis as above (plan section 5): accuracy should improve with
+representation size but with diminishing returns, so we want the plateau rather than
+the largest model. Everything else stays at the base config (2 encoder layers, 4
+attention heads, feedforward 256, dropout 0.3, Adam lr 1e-3, batch 64, 8 epochs,
+seed 42, mean pooling).
 
 | tag      | embed | params    | best ep | val F1 | **test acc** | **test F1** | t (s) |
 |----------|------:|----------:|--------:|-------:|-------------:|------------:|------:|
@@ -97,12 +120,19 @@ Hypothesis (plan §5): representation size improves accuracy with diminishing re
 | baseline |   128 | 2,825,476 |       8 | 0.9214 |       0.9208 |      0.9207 |  98.3 |
 | embed256 |   256 | 5,912,580 |       8 | 0.8979 |       0.8970 |      0.8968 | 191.8 |
 
-**Reading (Transformer Encoder only).** The hypothesis was not supported on the Transformer side. Test F1 is highest at embed=64 (0.9244), slightly lower at embed=128 (0.9207), and drops sharply at embed=256 (0.8968). Validation F1 shows the same pattern (0.9230 → 0.9214 → 0.8979), so the larger embedding does not merely overfit the test set; it appears harder to optimize or less effective under the fixed training budget and hyperparameters. The accuracy-per-parameter optimum on the Transformer side is **embed=64**, using about 49% of the baseline model's parameters while achieving the best test F1. Thus, for this setup, increasing representation size did not improve performance; the smallest embedding dimension was both the most accurate and the most parameter-efficient.
+What the Transformer numbers say. The hypothesis did not hold here. Test F1 is highest
+at embed 64 (0.9244), a bit lower at embed 128 (0.9207), and falls off sharply at
+embed 256 (0.8968). Validation F1 follows the same shape (0.9230, 0.9214, 0.8979), so
+this is not just test-set overfitting. Under the fixed training budget and
+hyperparameters, the larger embedding seems harder to train, not better. The best
+accuracy-per-parameter point is again embed 64, which reaches the top test F1 with
+about 49% of the baseline's parameters. So for this setup a bigger representation did
+not help: the smallest embedding was both the most accurate and the most efficient.
 
-Raw per-run artifacts: `code_Transformer/outputs/transformer/<tag>/{metrics.json, history.json, confusion_matrix.npy, best.pt}`.
-Reproduce: `python -u train_transformer.py --embed-dim 64 --tag embed64` (and 128/256).
-
+Per-run artifacts: `code/outputs/transformer/<tag>/` with `metrics.json`,
+`history.json`, `confusion_matrix.npy`, `best.pt`.
+Reproduce: `python -u train_transformer.py --embed-dim 64 --tag embed64` (then 128 and 256).
 
 ## License
 
-Coursework — released open for inspection. No production use.
+Coursework, released open for inspection. Not for production use.

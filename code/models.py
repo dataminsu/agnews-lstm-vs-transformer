@@ -9,7 +9,7 @@ from torch.nn.utils.rnn import pack_padded_sequence
 
 
 def count_parameters(model: nn.Module) -> int:
-    """Trainable parameter count -- required in the report for both models."""
+    """Trainable parameter count, which both models report in the writeup."""
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
 
@@ -43,15 +43,15 @@ class LSTMClassifier(nn.Module):
     Plan base config: embed_dim=128, hidden_size=256, num_layers=2,
     unidirectional, dropout=0.3, pooling = last hidden state.
 
-    TODO (model teammate):
-      - nn.Embedding(vocab_size, embed_dim, padding_idx=pad_idx)   # pitfall #3
-      - nn.LSTM(embed_dim, hidden_size, num_layers, batch_first=True,
-                dropout=dropout if num_layers > 1 else 0.0, bidirectional=bidirectional)
-      - pack_padded_sequence(embeds, lengths.cpu(), batch_first=True,
-                             enforce_sorted=False) so padding is ignored
-      - take the final layer's last hidden state (concat both directions if bidirectional)
-      - nn.Dropout(dropout) -> nn.Linear(hidden_out, num_classes)
-      - return logits (B, num_classes); NO softmax
+    How it works (implemented in __init__ / forward below):
+      - nn.Embedding(vocab_size, embed_dim, padding_idx=pad_idx) maps token ids
+        to vectors; the pad row stays at zero.
+      - pack_padded_sequence(..., enforce_sorted=False) hides padding from the
+        LSTM so the recurrence only sees real tokens.
+      - The final layer's last hidden state is the sentence representation
+        (both directions are concatenated when bidirectional=True).
+      - Dropout -> Linear produces the logits (B, num_classes); no softmax,
+        because CrossEntropyLoss expects raw logits.
     """
 
     def __init__(self, vocab_size, num_classes, pad_idx, embed_dim=128,
@@ -123,16 +123,20 @@ class TransformerEncoderClassifier(nn.Module):
     Plan base config: embed_dim=128, nhead=4, num_layers=2, dim_feedforward=256,
     dropout=0.3, mean pooling over non-pad tokens.
 
-    TODO (model teammate):
-      - nn.Embedding(vocab_size, embed_dim, padding_idx=pad_idx)
-      - positional encoding (sinusoidal or learned), added to embeddings
-      - layer = nn.TransformerEncoderLayer(d_model=embed_dim, nhead=nhead,
-                dim_feedforward=dim_feedforward, dropout=dropout, batch_first=True)
-        self.encoder = nn.TransformerEncoder(layer, num_layers)
-      - pass src_key_padding_mask = (input_ids == pad_idx) so attention ignores pad  # pitfall #3
-      - MEAN POOL over real tokens only (mask out pad before averaging), or CLS token
-      - nn.Dropout(dropout) -> nn.Linear(embed_dim, num_classes)
-      - return logits (B, num_classes); NO softmax
+    How it works (implemented in __init__ / forward below):
+      - nn.Embedding(vocab_size, embed_dim, padding_idx=pad_idx) maps token ids
+        to vectors.
+      - SinusoidalPositionalEncoding adds position information to the embeddings.
+      - nn.TransformerEncoder (num_layers of nn.TransformerEncoderLayer) runs
+        self-attention; src_key_padding_mask hides pad positions from attention.
+      - Pooling turns the per-token outputs into one vector per sentence:
+        "mean" averages over real (non-pad) tokens only, "cls" uses a prepended
+        learnable [CLS] token.
+      - Dropout -> Linear produces the logits (B, num_classes); no softmax,
+        because CrossEntropyLoss expects raw logits.
+
+    This is the model Hyeju extends. See code/transformer_guide.md for a
+    step-by-step guide on what to change and where.
     """
 
     def __init__(self, vocab_size, num_classes, pad_idx, embed_dim=128, nhead=4,

@@ -39,7 +39,7 @@ def train_one_epoch(model, loader, optimizer, criterion, device, grad_clip=1.0):
         logits = model(batch["input_ids"], batch["lengths"])
         loss = criterion(logits, batch["labels"])
         if not math.isfinite(loss.item()):
-            raise RuntimeError(f"non-finite loss ({loss.item()}) — aborting to avoid silent garbage")
+            raise RuntimeError(f"non-finite loss ({loss.item()}); aborting before it corrupts the run")
         loss.backward()
         if grad_clip and grad_clip > 0:
             torch.nn.utils.clip_grad_norm_(model.parameters(), grad_clip)
