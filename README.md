@@ -44,6 +44,7 @@ code/
   environment.yml      # conda env spec (Python 3.11)
   requirements.txt     # pinned pip deps (torch 2.3.0 + torchtext 0.18.0 + datasets + sklearn)
   setup_env.ps1        # Windows setup helper (conda)
+  train_transformer.py # Transformer baseline + ablation runner
 docs/
   2026_term_project.pdf
   assignment1_plan.docx
@@ -84,6 +85,23 @@ Hypothesis (plan §5): representation size improves accuracy with diminishing re
 
 Raw per-run artifacts (untracked, regenerable): `code/outputs/lstm/<tag>/{metrics.json, history.json, confusion_matrix.npy, best.pt}`.
 Reproduce: `python -u code/train_lstm.py --embed-dim 64 --tag embed64` (and 128/256). Aggregate: `python code/summarize_ablation.py --save-md code/ablation_embed_dim.md`.
+
+
+## Required ablation — Transformer Encoder side, embedding dimension `64 / 128 / 256`
+
+Hypothesis (plan §5): representation size improves accuracy with diminishing returns; the chosen config is the one at the accuracy plateau, **not the largest**. All other knobs fixed at the base config (2 Transformer encoder layers, 4 attention heads, feedforward dimension 256, dropout=0.3, Adam lr=1e-3, batch=64, 8 epochs, seed=42, mean pooling).
+
+| tag      | embed | params    | best ep | val F1 | **test acc** | **test F1** | t (s) |
+|----------|------:|----------:|--------:|-------:|-------------:|------------:|------:|
+| embed64  |    64 | 1,380,228 |       8 | 0.9230 |   **0.9243** |  **0.9244** | 180.4 |
+| baseline |   128 | 2,825,476 |       8 | 0.9214 |       0.9208 |      0.9207 |  98.3 |
+| embed256 |   256 | 5,912,580 |       8 | 0.8979 |       0.8970 |      0.8968 | 191.8 |
+
+**Reading (Transformer Encoder only).** The hypothesis was not supported on the Transformer side. Test F1 is highest at embed=64 (0.9244), slightly lower at embed=128 (0.9207), and drops sharply at embed=256 (0.8968). Validation F1 shows the same pattern (0.9230 → 0.9214 → 0.8979), so the larger embedding does not merely overfit the test set; it appears harder to optimize or less effective under the fixed training budget and hyperparameters. The accuracy-per-parameter optimum on the Transformer side is **embed=64**, using about 49% of the baseline model's parameters while achieving the best test F1. Thus, for this setup, increasing representation size did not improve performance; the smallest embedding dimension was both the most accurate and the most parameter-efficient.
+
+Raw per-run artifacts: `code_Transformer/outputs/transformer/<tag>/{metrics.json, history.json, confusion_matrix.npy, best.pt}`.
+Reproduce: `python -u train_transformer.py --embed-dim 64 --tag embed64` (and 128/256).
+
 
 ## License
 
