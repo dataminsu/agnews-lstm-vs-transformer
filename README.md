@@ -87,7 +87,7 @@ Raw per-run artifacts (untracked, regenerable): `code/outputs/lstm/<tag>/{metric
 Reproduce: `python -u code/train_lstm.py --embed-dim 64 --tag embed64` (and 128/256). Aggregate: `python code/summarize_ablation.py --save-md code/ablation_embed_dim.md`.
 
 
-## Required ablation — Transformer Encoder side, embedding dimension `64 / 128 / 256`
+## Required ablation — Transformer side, embedding dimension `64 / 128 / 256`
 
 Hypothesis (plan §5): representation size improves accuracy with diminishing returns; the chosen config is the one at the accuracy plateau, **not the largest**. All other knobs fixed at the base config (2 Transformer encoder layers, 4 attention heads, feedforward dimension 256, dropout=0.3, Adam lr=1e-3, batch=64, 8 epochs, seed=42, mean pooling).
 
