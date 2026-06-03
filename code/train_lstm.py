@@ -89,12 +89,14 @@ def main():
                     help="Output subfolder name under outputs/lstm/")
     ap.add_argument("--grad-clip", type=float, default=1.0,
                     help="Max grad norm for clip_grad_norm_; 0 disables")
+    ap.add_argument("--seed", type=int, default=42,
+                    help="Controls 90/10 split, DataLoader shuffle, and model init")
     args = ap.parse_args()
 
     out_dir = Path(__file__).parent / "outputs" / "lstm" / args.tag
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    set_seed(42)
+    set_seed(args.seed)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"device: {device}")
     if device.type == "cuda":
@@ -104,13 +106,14 @@ def main():
         max_len=args.max_len,
         train_fraction=args.train_fraction,
         batch_size=args.batch_size,
+        seed=args.seed,
     )
     print(f"config: {cfg}")
     bundle = build_pipeline(cfg)
     print(f"splits: train={len(bundle.train_dataset):,}  "
           f"val={len(bundle.val_dataset):,}  test={len(bundle.test_dataset):,}")
 
-    set_seed(42)  # so model init is independent of pipeline RNG drift
+    set_seed(args.seed)  # so model init is independent of pipeline RNG drift
     model = LSTMClassifier(
         vocab_size=bundle.vocab_size,
         num_classes=bundle.num_classes,
