@@ -46,3 +46,7 @@ Caffeine.zip
 docs/
 /2026_term_project.pdf
 /assignment1_plan_*.docx
+
+# ---- Session handoff (local-only context for resuming work) ----
+NEXT_SESSION_READ_FIRST.txt
+CLAUDE.md
