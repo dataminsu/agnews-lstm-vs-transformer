@@ -258,7 +258,7 @@ Controlled across every cell: HuggingFace `ag_news`, 90/10 train/val split fixed
 
 ---
 
-### Stage 3 — encoder depth (at embed=64, dropout=0.1)
+### Stage 3 — number of layers (at embed=64, dropout=0.1)
 
 | num_layers | params | val_f1 mean±std | test_acc mean±std | test_f1 mean±std | t (s) |
 |---:|---:|---:|---:|---:|---:|
