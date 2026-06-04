@@ -230,7 +230,7 @@ Controlled across every cell: HuggingFace `ag_news`, 90/10 train/val split fixed
 
 ---
 
-## Stage 1 — embedding dimension (num_layers=2, dropout=0.3)
+### Stage 1 — embedding dimension (num_layers=2, dropout=0.3)
 
 | embed_dim | params | val_f1 mean±std | test_acc mean±std | test_f1 mean±std | t (s) |
 |---:|---:|---:|---:|---:|---:|
@@ -243,7 +243,7 @@ Controlled across every cell: HuggingFace `ag_news`, 90/10 train/val split fixed
 
 ---
 
-## Stage 2 — dropout (at embed=64, num_layers=2)
+### Stage 2 — dropout (at embed=64, num_layers=2)
 
 | dropout | params | val_f1 mean±std | test_acc mean±std | test_f1 mean±std | t (s) |
 |---:|---:|---:|---:|---:|---:|
@@ -258,7 +258,7 @@ Controlled across every cell: HuggingFace `ag_news`, 90/10 train/val split fixed
 
 ---
 
-## Stage 3 — encoder depth (at embed=64, dropout=0.1)
+### Stage 3 — encoder depth (at embed=64, dropout=0.1)
 
 | num_layers | params | val_f1 mean±std | test_acc mean±std | test_f1 mean±std | t (s) |
 |---:|---:|---:|---:|---:|---:|
@@ -272,7 +272,7 @@ Controlled across every cell: HuggingFace `ag_news`, 90/10 train/val split fixed
 
 ---
 
-## Headline Transformer result
+### Headline Transformer result
 
 Final test-set readout, 5 seeds, n=7,600 test examples. Winner row is the config picked by the 3-stage selection rule (max mean val_f1 at each stage).
 
