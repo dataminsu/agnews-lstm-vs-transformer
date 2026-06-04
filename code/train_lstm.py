@@ -1,7 +1,8 @@
 """LSTM baseline training & evaluation for AG News.
 
 Trains LSTMClassifier with the plan's base config (embed=128, hidden=256, 2 layers,
-unidirectional, dropout=0.3), Adam lr=1e-3, batch=64, 8 epochs, seed=42.
+unidirectional, dropout=0.3), Adam lr=1e-3, batch=64, 8 epochs, data_seed=42
+(fixed split) and model_seed=42 (init/shuffle/dropout; vary for replicate runs).
 
 Selects the best epoch by validation macro-F1, then evaluates ONCE on the official
 test set. Writes history, metrics, and the confusion matrix to
@@ -89,14 +90,22 @@ def main():
                     help="Output subfolder name under outputs/lstm/")
     ap.add_argument("--grad-clip", type=float, default=1.0,
                     help="Max grad norm for clip_grad_norm_; 0 disables")
-    ap.add_argument("--seed", type=int, default=42,
-                    help="Controls 90/10 split, DataLoader shuffle, and model init")
+    ap.add_argument("--data-seed", type=int, default=42,
+                    help="FIXED across replicate runs: controls the 90/10 train/val "
+                         "split and the stratified train subsample (the DATA).")
+    ap.add_argument("--model-seed", type=int, default=42,
+                    help="VARIES across replicate runs (e.g. 42..46): controls weight "
+                         "init, DataLoader shuffle order, and dropout masks. This is "
+                         "the randomness the multi-seed mean +/- std averages over.")
+    ap.add_argument("--no-deterministic", dest="deterministic", action="store_false",
+                    help="Disable torch deterministic-algorithm enforcement (see set_seed).")
+    ap.set_defaults(deterministic=True)
     args = ap.parse_args()
 
     out_dir = Path(__file__).parent / "outputs" / "lstm" / args.tag
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    set_seed(args.seed)
+    set_seed(args.model_seed, deterministic=args.deterministic)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"device: {device}")
     if device.type == "cuda":
@@ -106,14 +115,16 @@ def main():
         max_len=args.max_len,
         train_fraction=args.train_fraction,
         batch_size=args.batch_size,
-        seed=args.seed,
+        data_seed=args.data_seed,
+        model_seed=args.model_seed,
+        deterministic=args.deterministic,
     )
     print(f"config: {cfg}")
     bundle = build_pipeline(cfg)
     print(f"splits: train={len(bundle.train_dataset):,}  "
           f"val={len(bundle.val_dataset):,}  test={len(bundle.test_dataset):,}")
 
-    set_seed(args.seed)  # so model init is independent of pipeline RNG drift
+    set_seed(args.model_seed, deterministic=args.deterministic)  # model init independent of pipeline RNG drift
     model = LSTMClassifier(
         vocab_size=bundle.vocab_size,
         num_classes=bundle.num_classes,

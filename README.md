@@ -73,7 +73,7 @@ We keep everything below identical for both models so the comparison is fair.
 | | Value |
 |---|---|
 | Dataset source | HuggingFace `ag_news` (one source only, no mixing with TorchText or CSV) |
-| Split | 90/10 train/val from the official train set (seed 42), official test set held out |
+| Split | 90/10 train/val from the official train set (**`data_seed=42`, fixed across every run**), official test set held out |
 | Tokenizer | `torchtext` basic_english |
 | Vocab | Built from train only, capped at 20,000, `<pad>=0` and `<unk>=1` |
 | Max length | 128 (dynamic batch padding, capped at 128) |
@@ -92,21 +92,30 @@ We keep everything below identical for both models so the comparison is fair.
 
 ## Required ablation: LSTM side — 3-stage multi-seed sweep
 
+> ⚠️ **The numbers in the tables below are being regenerated.** They were
+> produced under an earlier design where the val split was re-drawn for each
+> seed. The code now **fixes the split (`data_seed=42`)** and varies only
+> **`model_seed`** (weight init / shuffle / dropout) across {42..46}, so each
+> cell's σ measures training robustness on a fixed split rather than split
+> variance. Updated tables land in the next commit.
+
 The brief requires an embedding-dim ablation; we extend it to a 3-stage
 sequential ablation over `embed_dim`, `dropout`, and `hidden_size`, with 5
-seeds per cell (42, 43, 44, 45, 46) → 60 runs total. At each stage we hold the
-previous-stage winner fixed and pick the next winner by **mean validation
+model-seeds per cell (42, 43, 44, 45, 46) → 60 runs total. At each stage we hold
+the previous-stage winner fixed and pick the next winner by **mean validation
 macro-F1 across the 5 seeds**. Per brief §3.3 the test set is held out: it is
 never used to choose between cells. Test numbers below are reported only as
 the final readout per cell.
 
-Controlled across every cell: HuggingFace `ag_news`, 90/10 train/val split
-**re-seeded per `--seed`** (so for any single cell the σ across seeds
-aggregates split, init, and shuffle variance — not init/shuffle alone),
+Controlled across every cell (held FIXED): HuggingFace `ag_news`, the 90/10
+train/val split at **`data_seed=42` — the identical split for every run**,
 torchtext `basic_english` tokenizer, vocab capped at 20,000 built from train
 only, max_len=128 with dynamic batch padding, 2-layer unidirectional LSTM with
 last-hidden pooling, Adam lr=1e-3, batch=64, 8 epochs, grad_clip=1.0,
-CrossEntropyLoss on logits.
+CrossEntropyLoss on logits. **Varied between cells:** the ablated knob only.
+**Varied within a cell:** `model_seed` ∈ {42..46} (weight init, shuffle order,
+dropout masks) — so each cell's σ is *training robustness on a fixed split*, not
+split variance.
 
 ### Stage 1 — embedding dimension (hidden=256, dropout=0.3)
 

@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
-# Stage 1 — embedding-dim ablation, 4 dims x 5 seeds = 20 runs.
+# Stage 1 — embedding-dim ablation, 4 dims x 5 model-seeds = 20 runs.
 # Fixed base config: hidden=256, 2 layers, dropout=0.3, Adam lr=1e-3,
-# batch=64, 8 epochs, grad_clip=1.0. Tag: stage1_emb<dim>_s<seed>.
+# batch=64, 8 epochs, grad_clip=1.0. Tag: stage1_emb<dim>_s<model_seed>.
+# data_seed is FIXED at 42 (identical train/val split every run); only model_seed
+# (weight init / shuffle / dropout) varies across {42..46}, so the per-cell sigma
+# measures TRAINING robustness on a fixed split, not split variance.
 
 set -u
 # Override with PYENV=/path/to/python on machines where the conda env python is
@@ -9,12 +12,13 @@ set -u
 PYENV="${PYENV:-python}"
 export PYTHONIOENCODING=utf-8
 export PYTHONUTF8=1
+export CUBLAS_WORKSPACE_CONFIG=:4096:8   # required for torch deterministic GPU matmuls
 
 LOG_DIR="outputs/lstm/_logs"
 mkdir -p "$LOG_DIR"
 
 EMBED_DIMS=(32 64 128 256)
-SEEDS=(42 43 44 45 46)
+SEEDS=(42 43 44 45 46)   # MODEL seeds (init/shuffle/dropout); data_seed stays fixed at 42
 
 total=$(( ${#EMBED_DIMS[@]} * ${#SEEDS[@]} ))
 i=0
@@ -34,7 +38,8 @@ for embed in "${EMBED_DIMS[@]}"; do
     echo "[$(date +%H:%M:%S)] (${i}/${total}) ${tag}  START"
     "$PYENV" -u train_lstm.py \
       --embed-dim "$embed" \
-      --seed "$seed" \
+      --data-seed 42 \
+      --model-seed "$seed" \
       --tag "$tag" \
       > "$log" 2>&1
     rc=$?

@@ -62,7 +62,7 @@ def main():
 
     rows = []
     for sweep_val, items in sorted(groups.items(), key=lambda kv: (kv[0] is None, kv[0])):
-        seeds = [it[1].get("seed") for it in items]
+        seeds = [it[1].get("model_seed", it[1].get("seed")) for it in items]
         val_f1s = [it[2]["model"]["best_val_f1"] for it in items]
         test_accs = [it[2]["test"]["accuracy"] for it in items]
         test_f1s = [it[2]["test"]["macro_f1"] for it in items]

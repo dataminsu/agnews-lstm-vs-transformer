@@ -11,8 +11,10 @@ Dataset source rule (instructor brief 3.2):
     loader. We never mix the HuggingFace, TorchText, and raw-CSV access routes.
 
 Honors the team plan (assignment1_plan.docx) and the brief (2026_term_project.pdf):
-  - seed=42, 90/10 train/val split from the official train set;
-    the official test set is reserved for FINAL evaluation only.
+  - data_seed=42 fixes the 90/10 train/val split (a CONTROLLED variable, held
+    constant across replicate runs); model_seed varies across replicates and
+    drives init/shuffle/dropout for the mean +/- std. The official test set is
+    reserved for FINAL evaluation only.
   - vocabulary built from TRAIN data only, size <= 20,000, <pad>=0 / <unk>=1.
   - labels are integer indices 0..3 (asserted) for CrossEntropyLoss.
 
@@ -47,6 +49,12 @@ Quick start (pipeline smoke test): see model_guide.md / train_eval.ipynb.
 
 from __future__ import annotations
 
+import os
+# cuBLAS determinism for reproducible GPU matmuls. Must be set before the first
+# CUDA call (i.e. before torch initialises its cuBLAS handle), so we set it at
+# import time. Harmless on CPU-only machines.
+os.environ.setdefault("CUBLAS_WORKSPACE_CONFIG", ":4096:8")
+
 import random
 from dataclasses import dataclass
 from functools import partial
@@ -68,7 +76,18 @@ class DataConfig:
     """All knobs for the data pipeline. Defaults match the team plan."""
 
     dataset_name: str = "ag_news"
-    seed: int = 42
+    # Two INDEPENDENT seeds (see set_seed / build_pipeline / train_lstm.py):
+    #   data_seed  -> the 90/10 train/val split AND the stratified train subsample.
+    #                 Defines WHICH examples are train vs val. CONTROLLED variable:
+    #                 keep FIXED across replicate runs so every seed trains and
+    #                 validates on the EXACT SAME data.
+    #   model_seed -> weight init, DataLoader shuffle order, and dropout masks.
+    #                 The TRAINING-process randomness; vary it across the replicate
+    #                 seeds (42..46) so the reported mean +/- std measures robustness
+    #                 to init/shuffle/dropout on a fixed split.
+    # The official test set (ds["test"]) is fixed regardless of either seed.
+    data_seed: int = 42
+    model_seed: int = 42
     val_ratio: float = 0.1          # 90/10 train/val split from official train
     vocab_size: int = 20_000        # total vocab incl. specials 
     min_freq: int = 1               # min token frequency to enter the vocab
@@ -89,6 +108,11 @@ class DataConfig:
     # True : always pad every batch to a fixed length of max_len
     pad_to_max_len: bool = False
 
+    # Request torch deterministic algorithms (best-effort; see set_seed). cuDNN's
+    # LSTM kernel has no fully deterministic GPU variant in every torch version,
+    # so this is warn-only and never aborts a run.
+    deterministic: bool = True
+
     # Keep raw text / per-sample metadata in batches (needed for failure analysis)
     return_text: bool = True
     return_metadata: bool = True
@@ -97,9 +121,15 @@ class DataConfig:
 # --------------------------------------------------------------------------- #
 # Reproducibility  
 # --------------------------------------------------------------------------- #
-def set_seed(seed: int) -> None:
-    """Seed every RNG. Call again before building each model's DataLoader if you
-    need both models to see the exact same shuffle order (see model_guide.md)."""
+def set_seed(seed: int, deterministic: bool = True) -> None:
+    """Seed the RNGs that drive the TRAINING process: weight init, DataLoader
+    shuffle, and dropout masks. Call again right before model construction so init
+    does not depend on how many RNG draws the pipeline consumed (see train_lstm.py).
+
+    The train/val split is NOT seeded here: it takes an explicit data_seed via
+    train_test_split / _stratified_subset, so the split stays fixed while this
+    (model) seed varies across replicate runs.
+    """
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
@@ -107,6 +137,14 @@ def set_seed(seed: int) -> None:
         torch.cuda.manual_seed_all(seed)
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
+    if deterministic:
+        # cuDNN's LSTM / pack_padded_sequence backward has no fully deterministic
+        # GPU kernel in every torch version; warn_only=True requests determinism
+        # without aborting the run when a kernel lacks a deterministic variant.
+        try:
+            torch.use_deterministic_algorithms(True, warn_only=True)
+        except Exception:
+            pass
 
 
 def seed_worker(worker_id: int) -> None:
@@ -253,16 +291,18 @@ def _stratified_subset(labels, fraction: float, seed: int):
 
 
 def load_splits(cfg: DataConfig):
-    """Load ag_news, carve a seeded val split, optionally subsample train.
+    """Load ag_news, carve the val split with cfg.data_seed, optionally subsample train.
 
-    Returns three (texts, labels, original_indices) tuples plus the label names.
-    original_indices are positions in the post-split arrays (stable keys for
-    failure-analysis cross-referencing).
+    The split uses cfg.data_seed (NOT the model seed), so the train/val partition
+    is a controlled variable: it stays fixed while model_seed varies across the
+    replicate runs. Returns three (texts, labels, original_indices) tuples plus the
+    label names. original_indices are positions in the post-split arrays (stable
+    keys for failure-analysis cross-referencing).
     """
     ds = load_dataset(cfg.dataset_name)
     label_names = list(ds["train"].features["label"].names)  # ['World','Sports','Business','Sci/Tech']
 
-    split = ds["train"].train_test_split(test_size=cfg.val_ratio, seed=cfg.seed)
+    split = ds["train"].train_test_split(test_size=cfg.val_ratio, seed=cfg.data_seed)
     train, val, test = split["train"], split["test"], ds["test"]
 
     train_texts, train_labels = list(train["text"]), list(train["label"])
@@ -276,7 +316,7 @@ def load_splits(cfg: DataConfig):
 
     train_idx = list(range(len(train_labels)))
     if cfg.train_fraction < 1.0:
-        sel = _stratified_subset(train_labels, cfg.train_fraction, cfg.seed)
+        sel = _stratified_subset(train_labels, cfg.train_fraction, cfg.data_seed)
         train_texts = [train_texts[i] for i in sel]
         train_labels = [train_labels[i] for i in sel]
         train_idx = sel
@@ -331,7 +371,10 @@ def build_pipeline(cfg: DataConfig | None = None) -> PipelineBundle:
     This is the only function the model teammate needs to call.
     """
     cfg = cfg or DataConfig()
-    set_seed(cfg.seed)
+    # Seed the TRAINING-process RNG (the shuffle generator below + any global-RNG
+    # consumers). The split is seeded separately via cfg.data_seed inside
+    # load_splits, so it is unaffected by this call.
+    set_seed(cfg.model_seed, deterministic=cfg.deterministic)
 
     train_part, val_part, test_part, label_names = load_splits(cfg)
     num_classes = len(label_names)
@@ -354,7 +397,7 @@ def build_pipeline(cfg: DataConfig | None = None) -> PipelineBundle:
         return_metadata=cfg.return_metadata,
     )
     generator = torch.Generator()
-    generator.manual_seed(cfg.seed)
+    generator.manual_seed(cfg.model_seed)  # DataLoader shuffle = training randomness
 
     common = dict(
         batch_size=cfg.batch_size,
@@ -422,7 +465,8 @@ def describe_pipeline(bundle: PipelineBundle) -> None:
     print(line)
     print(f"dataset source    : HuggingFace '{cfg.dataset_name}' (single source)")
     print(f"tokenizer         : torchtext basic_english (tokenizer/vocab utility only)")
-    print(f"seed              : {cfg.seed}   |  val_ratio: {cfg.val_ratio}  |  train_fraction: {cfg.train_fraction}")
+    print(f"data_seed (split) : {cfg.data_seed} (FIXED)  |  model_seed (init/shuffle/dropout): {cfg.model_seed}")
+    print(f"determinism       : {cfg.deterministic}  |  val_ratio: {cfg.val_ratio}  |  train_fraction: {cfg.train_fraction}")
     print(f"max_len           : {cfg.max_len}  |  batch_size: {cfg.batch_size}")
     print(f"padding strategy  : {pad_strategy}")
     print(f"vocab size (built): {bundle.vocab_size} (cap {cfg.vocab_size})  |  pad={bundle.pad_idx} unk={bundle.unk_idx}")

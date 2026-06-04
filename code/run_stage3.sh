@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
-# Stage 3 — hidden_size ablation, 4 values x 5 seeds = 20 runs, at Stage-1+2 winners.
-# Stage-1 winner: embed_dim=256 (val_f1 0.9200 +/- 0.0013).
-# Stage-2 winner: dropout=0.3  (val_f1 0.9200 +/- 0.0013).
+# Stage 3 — hidden_size ablation, 4 values x 5 model-seeds = 20 runs, at Stage-1+2 winners.
+# Stage-1 winner carried in via --embed-dim 256; Stage-2 winner via --dropout 0.3.
 # hidden mapping per the plan: max=1024 -> 0.25/0.5/0.75/0.9 = {256, 512, 768, 922}.
 # Other fixed config: 2 layers, Adam lr=1e-3, batch=64, 8 epochs, grad_clip=1.0.
-# Tag: stage3_hid<H>_s<seed>  (e.g. stage3_hid256_s42).
+# Tag: stage3_hid<H>_s<model_seed>  (e.g. stage3_hid256_s42).
+# data_seed is FIXED at 42 (identical split every run); only model_seed varies
+# across {42..46}, so per-cell sigma = training robustness on a fixed split.
 
 set -u
 # Override with PYENV=/path/to/python on machines where the conda env python is
@@ -12,6 +13,7 @@ set -u
 PYENV="${PYENV:-python}"
 export PYTHONIOENCODING=utf-8
 export PYTHONUTF8=1
+export CUBLAS_WORKSPACE_CONFIG=:4096:8   # required for torch deterministic GPU matmuls
 
 LOG_DIR="outputs/lstm/_logs"
 mkdir -p "$LOG_DIR"
@@ -19,7 +21,7 @@ mkdir -p "$LOG_DIR"
 EMBED_DIM=256
 DROPOUT=0.3
 HIDDENS=(256 512 768 922)
-SEEDS=(42 43 44 45 46)
+SEEDS=(42 43 44 45 46)   # MODEL seeds (init/shuffle/dropout); data_seed stays fixed at 42
 
 total=$(( ${#HIDDENS[@]} * ${#SEEDS[@]} ))
 i=0
@@ -41,7 +43,8 @@ for hid in "${HIDDENS[@]}"; do
       --embed-dim "$EMBED_DIM" \
       --dropout "$DROPOUT" \
       --hidden-size "$hid" \
-      --seed "$seed" \
+      --data-seed 42 \
+      --model-seed "$seed" \
       --tag "$tag" \
       > "$log" 2>&1
     rc=$?
