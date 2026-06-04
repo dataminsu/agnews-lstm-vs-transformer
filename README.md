@@ -222,7 +222,7 @@ Reproduce: `bash run_stage1.sh && bash run_stage2.sh && bash run_stage3.sh`
 Aggregate: `python summarize_multiseed.py --tag-prefix stage1_emb --sweep embed_dim --save-md ablation_embed_dim.md`
 (and analogously for `stage2_drop`/`dropout`, `stage3_hid`/`hidden_size`).
 
-##Required ablation: Transformer side — 3-stage multi-seed sweep
+## Required ablation: Transformer side — 3-stage multi-seed sweep
 
 The brief requires an embedding-dim ablation; we extend it to a 3-stage sequential ablation over `embed_dim`, `dropout`, and `num_layers`, with 5 seeds per cell (42, 43, 44, 45, 46) — 60 runs total. At each stage we hold the previous-stage winner fixed and pick the next winner by **mean validation macro-F1** across the 5 seeds. Per §3.3 the test set is held out: it is never used to choose between cells. Test numbers below are reported only as the final readout per cell.
 
