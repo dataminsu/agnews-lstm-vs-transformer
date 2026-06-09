@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Stage 3 — hidden_size ablation, 4 values x 5 model-seeds = 20 runs, at Stage-1+2 winners.
-# Stage-1 winner carried in via --embed-dim 256; Stage-2 winner via --dropout 0.3.
+# Stage-1 winner carried in via --embed-dim 256; Stage-2 winner via --dropout 0.1.
 # hidden mapping per the plan: max=1024 -> 0.25/0.5/0.75/0.9 = {256, 512, 768, 922}.
 # Other fixed config: 2 layers, Adam lr=1e-3, batch=64, 8 epochs, grad_clip=1.0.
 # Tag: stage3_hid<H>_s<model_seed>  (e.g. stage3_hid256_s42).
@@ -19,7 +19,7 @@ LOG_DIR="outputs/lstm/_logs"
 mkdir -p "$LOG_DIR"
 
 EMBED_DIM=256
-DROPOUT=0.3
+DROPOUT=0.1   # Stage-2 winner (highest mean val_f1); replaces the earlier 0.3 carry-over
 HIDDENS=(256 512 768 922)
 SEEDS=(42 43 44 45 46)   # MODEL seeds (init/shuffle/dropout); data_seed stays fixed at 42
 
