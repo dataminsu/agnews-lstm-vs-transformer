@@ -211,6 +211,26 @@ Confusion matrix (행=정답, 열=예측):
 - 종합하면 LSTM의 천장(macro-F1 ≈ 0.92)을 누르는 주 병목은 **Business ↔ Sci/Tech 경계**이며,
   추가 개선(어텐션 풀링·키워드 가중 등)은 이 두 클래스에 집중하는 것이 가장 효율적이다.
 
+**어떤 단어에서 혼동하나 (실제 오분류 분석):** 우승 모델의 test 오분류를 직접 뜯어보면, 두
+클래스의 오류는 거의 전부 **테크 기업 기사**에서 난다. 같은 기업·제품이 양쪽 주제에 등장하므로,
+기사가 *재무 표현*에 기대면 Business로, *제품·기술 용어*에 기대면 Sci/Tech로 읽힌다. (괄호 안 숫자는
+해당 방향 177/98개 오분류 기사 중 그 단어가 등장한 기사 수.)
+
+- **Business → Sci/Tech (177건)** — 끌고 간 단어: `company`(28) `internet`(18) `computer`(17)
+  `software`(15) `online`(12) `web`(10) `chip`(10) `microsoft`(11) `technology`(11) — 즉 **제품·기술 어휘**.
+  - *"Intel to delay … a video display **chip** …"* → Intel의 제품 출시 연기(실은 기업 소식)인데 `chip`·Intel에 끌려 Sci/Tech로 오분류.
+  - *"Yahoo! Ups Ante for Small Businesses — **Web** hosting, domain-name price cuts"* → 가격 정책(Business)이지만 `Web`·Yahoo에 끌림.
+  - *"Ohio Sues Best Buy … the **electronics** retailer …"* → 소송(Business)인데 `electronics`에 끌림.
+- **Sci/Tech → Business (98건)** — 끌고 간 단어: `billion`(10) `quarter`(9) `sales`(7) `prices`(7)
+  `shares`(6) `stock`(5) `percent`(6) `oracle`(7) `peoplesoft`(6) — 즉 **재무 어휘**.
+  - *"Intuit Posts Wider **Loss** … maker of … software TurboTax … wider **quarterly** loss"* → 소프트웨어 업체(Sci/Tech)지만 `loss`·`quarterly`에 끌려 Business로.
+  - *"Rivals Try to Turn Tables on Charles Schwab … low **prices** … discount **stock** broker"* → `prices`·`stock`에 끌림.
+  - *Oracle·PeopleSoft* 인수전 기사들 → `billion`·`shares`에 끌림.
+
+→ 즉 혼동의 축은 *개별 단어*가 아니라 **두 주제가 공유하는 어휘(기업명·제품·시장 용어)** 그 자체다.
+마지막 hidden state 하나로 "같은 회사 기사가 어느 프레임인가"를 가르기 어렵다 — 어텐션/키워드
+가중이 이 경계에서 가장 큰 이득을 줄 지점이다.
+
 재현용 산출물(untracked, 재생성 가능): `code/outputs/lstm/stage{1,2,3}_*_s*/`
 (`metrics.json`, `history.json`, `confusion_matrix.npy`, `best.pt`).
 재실행: `bash run_stage1.sh && bash run_stage2.sh && bash run_stage3.sh`
