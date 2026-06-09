@@ -90,137 +90,129 @@ We keep everything below identical for both models so the comparison is fair.
 - Transformer Encoder: embedding 128 plus positional encoding, 2 layers, 4 heads,
   feedforward 256, mean pooling over non-pad tokens.
 
-## Required ablation: LSTM side — 3-stage multi-seed sweep
+## LSTM 실험 결과 — 3단계 순차 Ablation
 
-The brief requires an embedding-dim ablation; we extend it to a 3-stage
-sequential ablation over `embed_dim`, `dropout`, and `hidden_size`, with 5
-model-seeds per cell (42, 43, 44, 45, 46) → 60 runs total. At each stage we hold
-the previous-stage winner fixed and pick the next winner by **mean validation
-macro-F1 across the 5 seeds**. Per brief §3.3 the test set is held out: it is
-never used to choose between cells. Test numbers below are reported only as
-the final readout per cell.
+과제는 임베딩 차원 ablation을 요구하며, 이를 `embed_dim` → `dropout` → `hidden_size`
+**3단계 순차 ablation**으로 확장했다. 각 셀은 **model_seed 5개(42–46)** 로 학습해
+평균±표준편차로 보고하며(총 60런), 각 단계의 우승은 **검증 macro-F1 평균**으로 고른
+뒤 다음 단계에 고정한다. test set은 셀 선택에 절대 쓰지 않고 **최종 확인용**으로만
+1회 평가한다.
 
-Controlled across every cell (held FIXED): HuggingFace `ag_news`, the 90/10
-train/val split at **`data_seed=42` — the identical split for every run**,
-torchtext `basic_english` tokenizer, vocab capped at 20,000 built from train
-only, max_len=128 with dynamic batch padding, 2-layer unidirectional LSTM with
-last-hidden pooling, Adam lr=1e-3, batch=64, 8 epochs, grad_clip=1.0,
-CrossEntropyLoss on logits. **Varied between cells:** the ablated knob only.
-**Varied within a cell:** `model_seed` ∈ {42..46} (weight init, shuffle order,
-dropout masks) — so each cell's σ is *training robustness on a fixed split*, not
-split variance.
+**모든 셀에서 고정(공정 비교):** HuggingFace `ag_news`, 90/10 train/val 분할
+(`data_seed=42` 동일 분할), `basic_english` 토크나이저, vocab 20,000(train만으로 구축),
+max_len=128 동적 패딩, 2층 단방향 LSTM(마지막 hidden 풀링), Adam lr=1e-3, batch=64,
+8 epoch, grad_clip=1.0, CrossEntropyLoss. **셀 간 변화:** 해당 축 하나만.
+**셀 내 변화:** `model_seed`(가중치 초기화·셔플·드롭아웃) → 각 셀의 σ는 고정 분할 위
+**학습 과정 견고성**을 의미(분할 변동이 아님). t(s)는 RTX 4080 기준 런당 평균 학습 시간.
 
-### Stage 1 — embedding dimension (hidden=256, dropout=0.3)
+### Stage 1 — 임베딩 차원 (hidden=256, dropout=0.3)
 
-| embed_dim | params    | val_f1 mean±std     | test_acc mean±std | test_f1 mean±std  | t (s) |
+| embed_dim | 파라미터 | val_f1 (평균±σ) | test_acc | test_f1 | t(s) |
 |----------:|----------:|:--------------------|:------------------|:------------------|------:|
 |        32 | 1,464,324 | 0.9156 ± 0.0005     | 0.9124 ± 0.0021   | 0.9124 ± 0.0020   |    75 |
 |        64 | 2,137,092 | 0.9166 ± 0.0015     | 0.9123 ± 0.0015   | 0.9123 ± 0.0015   |    76 |
 |       128 | 3,482,628 | 0.9174 ± 0.0012     | 0.9138 ± 0.0006   | 0.9137 ± 0.0006   |    76 |
 |   **256** | 6,173,700 | **0.9190 ± 0.0017** | 0.9144 ± 0.0022   | 0.9143 ± 0.0022   |    81 |
 
-**Winner: embed_dim = 256** (mean val_f1 0.9190 ± 0.0017). The full-range
-effect is statistically resolved: embed=256 beats embed=32 in 5 of 5 seeds
-(one-sided paired sign test, p ≈ 0.031). Adjacent-cell deltas are not
-individually resolved at n=5 (256 vs 128: 3 of 5 wins). Mean val_f1 is monotone
-across the swept range. We carry embed=256 forward as the highest-mean cell.
-(t (s) = mean total train time per run on an RTX 4080.)
+**① 최고 성능:** `embed_dim = 256` (val_f1 0.9190, test_f1 0.9143) → 다음 단계로 고정.
 
-### Stage 2 — dropout (at embed=256, hidden=256)
+**② 종합·이유:** 32 → 256으로 갈수록 평균 성능이 **단조 증가**한다. 임베딩 차원이 커질수록
+토큰 의미를 담는 표현 공간이 넓어져 분류 단서가 풍부해지기 때문이다. 다만 인접 셀 차이
+(예: 128→256)는 표준편차(σ≈0.0015) 안이라 통계적으로 또렷하지 않고, **32→256 전 구간
+차이만 5seed 모두에서 분명**하다. 이 8 epoch 예산에서는 256에서 이미 수확체감이 시작된다.
 
-| dropout | val_f1 mean±std     | test_acc mean±std | test_f1 mean±std  | t (s) |
+### Stage 2 — 드롭아웃 (embed=256, hidden=256)
+
+| dropout | val_f1 (평균±σ) | test_acc | test_f1 | t(s) |
 |--------:|:--------------------|:------------------|:------------------|------:|
 | **0.1** | **0.9193 ± 0.0007** | 0.9166 ± 0.0027   | 0.9166 ± 0.0026   |    81 |
 |     0.3 | 0.9190 ± 0.0017     | 0.9144 ± 0.0022   | 0.9143 ± 0.0022   |    80 |
 |     0.5 | 0.9188 ± 0.0014     | 0.9162 ± 0.0014   | 0.9162 ± 0.0014   |    81 |
 |     0.8 | 0.9180 ± 0.0016     | 0.9128 ± 0.0017   | 0.9129 ± 0.0016   |    82 |
 
-**Winner: dropout = 0.1** by the selection rule (highest mean val_f1), but the
-swept range is **flat**: no pair is statistically separable at n=5 — in
-particular 0.1 vs 0.3 is only 3 of 5 seed-wins (means 0.9180–0.9193, σ ≈ 0.0014).
-⚠️ **Carry-over note:** Stage 3 below was executed at **dropout = 0.3** (the value
-carried from the prior sweep), not 0.1. Because 0.1 and 0.3 are statistically
-indistinguishable here, this does not affect the hidden-size conclusions, and
-0.3 also matches the shared Transformer baseline. Re-running Stage 3 at 0.1 would
-change nothing material — the dropout axis is flat.
+**① 최고 성능:** `dropout = 0.1` (val_f1 0.9193).
 
-**Reproducibility cross-check.** Stage-2 cells at dropout=0.3 across model-seeds
-{42..46} re-run the exact same config as Stage-1 cells at embed=256 (same
-`data_seed=42`, same `model_seed`). The two sets of `metrics.json` are
-byte-identical except for the `tag` and `train_time_sec` fields — confirmed: both
-report val_f1 0.9190 ± 0.0017. Verify (no external dep, uses stdlib):
+**② 종합·이유:** 0.1~0.8 구간이 **거의 평평**하다(전체 최대 차이 0.0013, σ 안 → 통계적으로
+무차별). 모델 규모(6.2M)와 8 epoch 예산에서는 심한 과적합이 일어나지 않아 드롭아웃의
+정규화 효과가 미미하고, 0.8처럼 과하면 오히려 정보 손실로 소폭 하락한다. 즉 **이 문제에서
+드롭아웃은 민감하지 않은 축**이다. (Stage 3는 직전 관행대로 0.3으로 실행했는데, 0.1과
+통계적으로 같으므로 결론에는 영향이 없다.)
 
-```bash
-python -c "
-import json
-def strip(p):
-    d = json.load(open(p)); d['config'].pop('tag', None); d.pop('train_time_sec', None); return d
-print('MATCH' if strip('outputs/lstm/stage1_emb256_s42/metrics.json') == strip('outputs/lstm/stage2_drop0.3_s42/metrics.json') else 'DIFF')
-"
-```
+### Stage 3 — 은닉 크기 (embed=256, dropout=0.3)
 
-The two seeds therefore control all stochasticity end-to-end — `data_seed` the
-split, `model_seed` init/shuffle/dropout — with no hidden RNG drift between stages.
+은닉 크기는 임의 상한 1024의 {0.25, 0.5, 0.75, 0.9} = {256, 512, 768, 922}로 스윕했다.
 
-### Stage 3 — hidden size (at embed=256, dropout=0.3)
-
-Sweep maps {0.25, 0.5, 0.75, 0.9} of an arbitrary cap of 1024 → {256, 512,
-768, 922}.
-
-| hidden  | params     | val_f1 mean±std     | test_acc mean±std | test_f1 mean±std  | t (s) |
+| hidden  | 파라미터 | val_f1 (평균±σ) | test_acc | test_f1 | t(s) |
 |--------:|-----------:|:--------------------|:------------------|:------------------|------:|
 |     256 |  6,173,700 | 0.9190 ± 0.0017     | 0.9144 ± 0.0022   | 0.9143 ± 0.0022   |    81 |
 |     512 |  8,800,260 | 0.9215 ± 0.0012     | 0.9178 ± 0.0019   | 0.9177 ± 0.0019   |   116 |
 |     768 | 12,999,684 | 0.9213 ± 0.0020     | 0.9166 ± 0.0031   | 0.9166 ± 0.0030   |   173 |
 | **922** | 16,283,580 | **0.9222 ± 0.0019** | 0.9178 ± 0.0041   | 0.9177 ± 0.0040   |   247 |
 
-**Winner: hidden = 922** (mean val_f1 0.9222 ± 0.0019). Statistical resolution
-inside the sweep: hidden=922 beats hidden=256 in 5 of 5 seeds on val_f1
-(paired sign test p ≈ 0.031, resolved), but hidden=922 vs hidden=512 is
-**unresolved** — 3 of 5 wins, Δ val_f1 = +0.0007 < 1 σ. The plateau predicted by
-plan §5 ("pick the plateau, not the largest") begins near **hidden ≈ 512**. We
-therefore also report a **cost-aware alternative (hidden = 512)** in the headline
-below: it ties the winner on test F1 (both 0.9177), is statistically
-indistinguishable on validation, and trains ≈ 2.1× faster (116 s vs 247 s per
-run on a 4080, training-side info only — no test-set quantity enters this choice).
+**① 최고 성능:** `hidden = 922` (val_f1 0.9222, test_f1 0.9177).
 
-### Headline LSTM result
+**② 종합·이유:** 256 → 512에서 뚜렷이 향상(+0.0025 val)되고, **512~922 구간은 평평
+(plateau)**하다. 즉 표현 용량이 512 부근에서 이미 포화되어 그 이상 키워도 평균 성능은
+거의 늘지 않는다(922 vs 512는 5seed 중 3승으로 통계적 미해결). 922가 명목 우승이지만
+**512와 test_f1이 동률(0.9177)이면서 학습은 약 2.1배 빠르다** → 실용적으로는
+**hidden=512가 비용효율 최적**. 파라미터는 922가 512의 약 1.85배인데 얻는 이득은 없다.
 
-Final test-set readout, 5 model-seeds on the fixed `data_seed=42` split,
-n=7,600 test examples. The winner row is the config picked by the published
-selection rule (max mean val_f1); the cost-aware-alternative row is provided
-because the two are statistically indistinguishable on validation (and tied on
-test F1) but the alternative trains ≈ 2.1× faster.
+### 최종 선택 모델
 
-| config                                                   | val_f1            | test_acc          | test_f1           |
-|----------------------------------------------------------|-------------------|-------------------|-------------------|
-| **winner** (embed=256, drop=0.3, **hidden=922**)         | 0.9222 ± 0.0019   | 0.9178 ± 0.0041   | 0.9177 ± 0.0040   |
-| cost-aware alternative (embed=256, drop=0.3, hidden=512) | 0.9215 ± 0.0012   | 0.9178 ± 0.0019   | 0.9177 ± 0.0019   |
+| 설정 | val_f1 | test_acc | test_f1 |
+|------|-------------------|-------------------|-------------------|
+| **우승** (embed=256, drop=0.3, **hidden=922**)        | 0.9222 ± 0.0019 | 0.9178 ± 0.0041 | 0.9177 ± 0.0040 |
+| 비용효율 대안 (embed=256, drop=0.3, hidden=512)        | 0.9215 ± 0.0012 | 0.9178 ± 0.0019 | 0.9177 ± 0.0019 |
 
-The 3-stage sweep raised the LSTM's mean test F1 from **0.9124 ± 0.0020**
-(embed=32 starting cell) to **0.9177 ± 0.0040** at the winning config — a
-0.53 pp absolute gain, only ≈ 1.7× the binomial standard error on n=7,600 test
-examples (≈ ±0.32 pp at p ≈ 0.92), so modest in absolute terms. Treat the LSTM
-ceiling at this 8-epoch budget as roughly **0.92 macro-F1**. Every run uses the
-fixed split plus deterministic algorithms, so the residual σ is training-process
-noise (init / shuffle / dropout) only — not split variance.
+3단계 sweep으로 LSTM 평균 test F1을 **0.9124(시작 셀 embed=32) → 0.9177(우승)** 으로
++0.53pp 끌어올렸다(n=7,600 기준 표준오차의 약 1.7배 — 절대값으로는 완만한 향상).
+**8 epoch 예산에서 이 LSTM의 천장은 대략 macro-F1 0.92** 수준이며, 잔차 σ는 고정 분할
+위 학습 과정(초기화·셔플·드롭아웃) 노이즈일 뿐 분할 변동이 아니다. 세 축 중 `embed_dim`과
+`hidden_size`는 "키울수록 좋아지다 plateau"라는 가설과 일치했고, `dropout`은 평평해
+가설을 지지도 반박도 하지 못했다.
 
-Consistent with the plan §5 hypothesis on two of the three axes:
-- `embed_dim`: monotone in mean across the swept range, with the full
-  32→256 step statistically resolved (5 of 5 wins, paired sign test
-  p ≈ 0.031). Adjacent-cell deltas are inside 1 σ (256 vs 128: 3 of 5).
-- `hidden_size`: the 256→922 step is resolved (5 of 5 wins, p ≈ 0.031); the
-  512→922 step is **not** resolved (3 of 5 wins) — i.e. a plateau from
-  hidden ≈ 512 onward (the cost-aware pick).
-- `dropout`: flat across the swept range; no pair is separable at n=5, so the
-  hypothesis can be neither supported nor refuted on this axis.
+### ③ 최종 모델 Class별 성능 분석
 
-Per-run artifacts (untracked, regenerable): `code/outputs/lstm/stage{1,2,3}_*_s*/`
-with `metrics.json`, `history.json`, `confusion_matrix.npy`, `best.pt`.
-Reproduce: `bash run_stage1.sh && bash run_stage2.sh && bash run_stage3.sh`
-(resumable — skips any run whose `metrics.json` already exists).
-Aggregate: `python summarize_multiseed.py --tag-prefix stage1_emb --sweep embed_dim --save-md ablation_embed_dim.md`
-(and analogously for `stage2_drop`/`dropout`, `stage3_hid`/`hidden_size`).
+우승 설정(embed=256, dropout=0.3, **hidden=922**) 단일 시드(seed=42) 학습 모델의 test set
+(클래스당 1,900개, 총 7,600개) 성능이다. 이 시드의 test macro-F1은 **0.9155**로 5-시드
+평균(0.9177 ± 0.0040)과 일치 범위 안에 있다(best epoch=4).
+
+| 클래스 | Precision | Recall | F1 | n |
+|--------|----------:|-------:|------:|------:|
+| World    | 91.87 | 92.16 | 92.01 | 1,900 |
+| Sports   | 97.37 | 97.32 | **97.34** | 1,900 |
+| Business | 89.48 | 86.37 | **87.90** | 1,900 |
+| Sci/Tech | 87.56 | 90.37 | 88.94 | 1,900 |
+| **macro** | **91.57** | **91.55** | **91.55** | 7,600 |
+
+Confusion matrix (행=정답, 열=예측):
+
+|            | →World | →Sports | →Business | →Sci/Tech |
+|------------|-------:|--------:|----------:|----------:|
+| **World**    | 1751 |   26 |   65 |   58 |
+| **Sports**   |   17 | 1849 |   25 |    9 |
+| **Business** |   74 |    8 | 1641 |  **177** |
+| **Sci/Tech** |   64 |   16 | **103** | 1717 |
+
+**분석:**
+- **Sports가 압도적으로 쉽다(F1 97.3).** 경기·선수·점수·리그명 등 스포츠 어휘가 다른
+  주제와 거의 겹치지 않아 오분류가 1,900개 중 51개뿐이다.
+- **World도 양호(F1 92.0).** 다만 국제 정치·경제 기사가 Business와 일부 겹쳐
+  World→Business 오분류가 65건 나온다.
+- **Business와 Sci/Tech가 가장 어렵고 서로 가장 많이 혼동된다(F1 87.9 / 88.9).**
+  Business→Sci/Tech 177건, Sci/Tech→Business 103건으로 **전체 오분류의 최대 축**이다.
+  이유는 두 주제가 **어휘를 공유**하기 때문이다 — 기술기업(애플·구글 등)·제품·주가·실적·
+  시장 같은 단어가 양쪽 기사에 모두 등장해, 마지막 hidden state 하나만으로는
+  "기업의 사업 소식(Business)"과 "기술 그 자체(Sci/Tech)"를 가르기 어렵다.
+- 종합하면 LSTM의 천장(macro-F1 ≈ 0.92)을 누르는 주 병목은 **Business ↔ Sci/Tech 경계**이며,
+  추가 개선(어텐션 풀링·키워드 가중 등)은 이 두 클래스에 집중하는 것이 가장 효율적이다.
+
+재현용 산출물(untracked, 재생성 가능): `code/outputs/lstm/stage{1,2,3}_*_s*/`
+(`metrics.json`, `history.json`, `confusion_matrix.npy`, `best.pt`).
+재실행: `bash run_stage1.sh && bash run_stage2.sh && bash run_stage3.sh`
+(resumable — `metrics.json`이 이미 있으면 건너뜀). 집계:
+`python summarize_multiseed.py --tag-prefix stage1_emb --sweep embed_dim --save-md ablation_embed_dim.md`
+(이하 `stage2_drop`/`dropout`, `stage3_hid`/`hidden_size` 동일).
 
 ## Required ablation: Transformer side — 3-stage multi-seed sweep
 
