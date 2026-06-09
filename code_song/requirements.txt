@@ -1,0 +1,24 @@
+# AG News term project - shared dependencies.
+#
+# torchtext has been REMOVED. The basic_english tokenizer and build_vocab are
+# reimplemented in pure Python in text_utils.py, byte-identical to torchtext
+# 0.18.0 (proven by verify_text_utils.py). This frees the torch version, so the
+# code runs on Blackwell GPUs (e.g. RTX 5090, sm_120) that require torch>=2.7 /
+# CUDA 12.8 -- where torchtext 0.18 (pinned to torch 2.3.0) cannot install.
+#
+# Install torch SEPARATELY for your hardware FIRST, then `pip install -r requirements.txt`:
+#   RTX 5090 / Blackwell : pip install torch --index-url https://download.pytorch.org/whl/cu128
+#   RTX 40xx / cu121     : pip install torch==2.3.0 --index-url https://download.pytorch.org/whl/cu121
+#   CPU only             : pip install torch
+# (No torchtext line anymore -- do not reinstall it.)
+
+datasets>=2.19,<3
+# huggingface_hub 1.x rejects the non-namespaced id "ag_news"; pin to the 0.x
+# line that datasets 2.x targets so load_dataset("ag_news") works as in the brief.
+huggingface_hub>=0.23,<1.0
+numpy>=1.26
+scikit-learn>=1.4
+matplotlib>=3.8
+# For running the final-submission notebook (train_eval.ipynb):
+ipykernel>=6.29
+nbconvert>=7.16

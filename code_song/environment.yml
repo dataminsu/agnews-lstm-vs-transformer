@@ -1,0 +1,19 @@
+# Shareable conda environment for the AG News term project.
+# Create with:  conda env create -f environment.yml
+# Then:         conda activate agnews-dl
+#               # install torch for your GPU (see requirements.txt header), e.g. 5090:
+#               pip install torch --index-url https://download.pytorch.org/whl/cu128
+#               pip install -r requirements.txt
+#               python data_pipeline.py
+#
+# torchtext is gone (replaced by text_utils.py), so Python is no longer constrained
+# by it; 3.11 is kept because torch cu128 wheels are well-tested there. torch is
+# installed separately (NOT pinned here) so each machine gets the right CUDA build.
+name: agnews-dl
+channels:
+  - defaults
+dependencies:
+  - python=3.11
+  - pip
+  - pip:
+      - -r requirements.txt
